@@ -1,21 +1,80 @@
-# Smart Cart Plus
+# SmartCart Plus - Intelligent Shopping System
 
-This is the Smart Cart Plus project repository.
+A modern shopping system implementing advanced data structures and algorithms for optimal user experience. This project demonstrates the practical application of computer science concepts in real-world scenarios.
 
-## Getting Started
+## 🎯 Project Overview
 
-This project is part of the PDSA coursework at NIBM HDSE.
+SmartCart Plus is a comprehensive shopping system that solves modern-day shopping challenges through innovative algorithm implementation:
 
-## Features
+### Core Features & Algorithms
 
-- Smart shopping cart functionality
-- Enhanced user experience
-- Data structures and algorithms implementation
+#### 1. **Binary Search Algorithm** - Product Search
+- **Time Complexity**: O(log n)
+- **Implementation**: Fast product lookup in sorted databases
+- **Features**: Search by name, price range, category
 
-## Setup
+#### 2. **Merge Sort Algorithm** - Product Sorting
+- **Time Complexity**: O(n log n)
+- **Implementation**: Efficient sorting by price, name, expiry date
+- **Features**: Multiple sort criteria with stable sorting
 
-Instructions for setting up and running the project will be added here.
+#### 3. **Rush Hour Navigator** (Enhanced Dijkstra's Algorithm)
+- **Time Complexity**: O((V + E) log V)
+- **Innovation**: Dynamic edge weights based on real-time aisle congestion
+- **Features**: Crowd-avoiding pathfinding, alternative route suggestions
 
-## Contributing
+#### 4. **Smart Expiry Alert System** (Min-Heap)
+- **Time Complexity**: Insert/Extract O(log n)
+- **Implementation**: Priority queue for products nearing expiry
+- **Features**: Real-time staff alerts, inventory prioritization
 
-This is an academic project. Please follow the course guidelines for contributions.
+#### 5. **Product Recommendation System** (BFS)
+- **Time Complexity**: O(V + E)
+- **Implementation**: Graph traversal for "frequently bought together"
+- **Features**: Cart-based recommendations, trending products
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18.0 or higher
+- npm or yarn package manager
+
+### Installation
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+3. **Open in browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 📊 Algorithm Analysis
+
+### Performance Metrics
+
+| Algorithm | Time Complexity | Space Complexity | Use Case |
+|-----------|----------------|------------------|----------|
+| Binary Search | O(log n) | O(1) | Product lookup |
+| Merge Sort | O(n log n) | O(n) | Product sorting |
+| Dijkstra's Enhanced | O((V+E) log V) | O(V) | Navigation |
+| Min-Heap | O(log n) | O(n) | Expiry alerts |
+| BFS | O(V + E) | O(V) | Recommendations |
+
+## 🎓 PDSA Course Integration
+
+This project demonstrates practical implementation of:
+- **Data Structures**: Arrays, Trees, Graphs, Heaps, Hash Maps
+- **Algorithms**: Search, Sort, Graph traversal, Dynamic programming
+- **Complexity Analysis**: Time and space complexity optimization
+- **Real-World Applications**: How algorithms solve actual problems
+
+**NIBM HDSE - PDSA Project**
+- Course: Programming and Data Structures & Algorithms
+- Institution: National Institute of Business Management
+- Program: Higher Diploma in Software Engineering
