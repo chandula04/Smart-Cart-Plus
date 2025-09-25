@@ -148,7 +148,7 @@ export class ProductRecommendationSystem {
       const recommendations = this.getRecommendations(productId, maxRecommendations * 2);
       
       recommendations.forEach(rec => {
-        if (!productIds.includes(rec.product.id)) { // Don't recommend products already in cart
+        if (productIds.indexOf(rec.product.id) === -1) { // Don't recommend products already in cart
           const existing = allRecommendations.get(rec.product.id);
           if (existing) {
             existing.totalConfidence += rec.confidence;

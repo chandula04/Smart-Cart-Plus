@@ -154,7 +154,9 @@ export class RushHourNavigator {
     const unvisited = new Set<string>();
     
     // Initialize distances
-    for (const nodeId of this.graph.keys()) {
+    const nodeIds = Array.from(this.graph.keys());
+    for (let i = 0; i < nodeIds.length; i++) {
+      const nodeId = nodeIds[i];
       distances.set(nodeId, Infinity);
       previous.set(nodeId, null);
       unvisited.add(nodeId);
@@ -166,7 +168,9 @@ export class RushHourNavigator {
       let currentNode: string | null = null;
       let minDistance = Infinity;
       
-      for (const nodeId of unvisited) {
+      const unvisitedArray = Array.from(unvisited);
+      for (let i = 0; i < unvisitedArray.length; i++) {
+        const nodeId = unvisitedArray[i];
         const distance = distances.get(nodeId) || Infinity;
         if (distance < minDistance) {
           minDistance = distance;
@@ -187,7 +191,9 @@ export class RushHourNavigator {
       const currentCongestion = this.congestionMultiplier.get(currentNode) || 1.0;
       
       // Check all neighbors
-      for (const [neighborId, baseDistance] of currentGraphNode.connections) {
+      const connections = Array.from(currentGraphNode.connections.entries());
+      for (let i = 0; i < connections.length; i++) {
+        const [neighborId, baseDistance] = connections[i];
         if (!unvisited.has(neighborId)) continue;
         
         const neighborCongestion = this.congestionMultiplier.get(neighborId) || 1.0;
