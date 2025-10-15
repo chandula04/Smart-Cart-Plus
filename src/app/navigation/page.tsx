@@ -250,8 +250,8 @@ export default function NavigationPage() {
             <label className="block text-sm font-medium text-gray-700 mb-3">
               📍 You are at:
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {storeSections.slice(0, 6).map((section) => (
+            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              {storeSections.map((section) => (
                 <button
                   key={section.name}
                   onClick={() => setSelectedStart(section)}
@@ -273,8 +273,8 @@ export default function NavigationPage() {
             <label className="block text-sm font-medium text-gray-700 mb-3">
               🎯 I want to go to:
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              {storeSections.filter(s => s.products.length > 0 || s.name === 'Checkout Counter' || s.name === 'Customer Service').map((section) => (
+            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+              {storeSections.filter(s => s.name !== 'Entrance').map((section) => (
                 <button
                   key={section.name}
                   onClick={() => handleSectionSelect(section)}

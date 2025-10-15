@@ -3,8 +3,8 @@ export interface Product {
   name: string;
   price: number;
   category: string;
-  aisle: string;
-  expiryDate: Date;
+  section: string; // Changed from 'aisle' to 'section' (e.g., "Dairy & Eggs", "Bakery")
+  expiryDate?: Date; // Made optional for products without expiry dates
   description?: string;
   image?: string;
   inStock: boolean;
@@ -16,8 +16,20 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface StoreSection {
+  id: string;
+  name: string;
+  icon: string;
+  x?: number;  // Grid position X (optional for flexibility)
+  y?: number;  // Grid position Y (optional for flexibility)
+  position?: Position;  // Alternative position format
+  products?: Product[];
+  congestionLevel?: number; // 1-5 scale (real-time traffic)
+  description?: string;
+}
+
 export interface StoreLayout {
-  aisles: Aisle[];
+  sections: StoreSection[];
   entrances: Position[];
   exits: Position[];
 }
@@ -67,4 +79,14 @@ export interface User {
   currentPosition?: Position;
   cart: CartItem[];
   preferences: string[];
+}
+
+export interface TrafficData {
+  sectionId: string;  // Section identifier
+  sectionName: string;
+  position?: Position;  // Optional position
+  currentPeople: number;
+  maxCapacity: number;
+  congestionLevel: number; // Calculated: currentPeople / maxCapacity
+  lastUpdated: Date;  // Changed from timestamp to lastUpdated for clarity
 }

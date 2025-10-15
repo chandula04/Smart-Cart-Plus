@@ -35,9 +35,9 @@ export default function HomePage() {
       {
         id: '1',
         name: 'Organic Milk',
-        price: 4.99,
+        price: 450,
         category: 'Dairy',
-        aisle: 'A1',
+        section: 'Dairy & Eggs',
         expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days
         description: 'Fresh organic whole milk',
         inStock: true,
@@ -46,9 +46,9 @@ export default function HomePage() {
       {
         id: '2',
         name: 'Whole Wheat Bread',
-        price: 3.49,
+        price: 180,
         category: 'Bakery',
-        aisle: 'B2',
+        section: 'Bakery',
         expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
         description: 'Freshly baked whole wheat bread',
         inStock: true,
@@ -57,9 +57,9 @@ export default function HomePage() {
       {
         id: '3',
         name: 'Fresh Bananas',
-        price: 2.99,
+        price: 280,
         category: 'Produce',
-        aisle: 'C1',
+        section: 'Fresh Fruits',
         expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
         description: 'Ripe yellow bananas',
         inStock: true,
@@ -68,9 +68,9 @@ export default function HomePage() {
       {
         id: '4',
         name: 'Chicken Breast',
-        price: 8.99,
+        price: 850,
         category: 'Meat',
-        aisle: 'D3',
+        section: 'Meat & Seafood',
         expiryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day
         description: 'Fresh chicken breast',
         inStock: true,
@@ -79,9 +79,9 @@ export default function HomePage() {
       {
         id: '5',
         name: 'Greek Yogurt',
-        price: 5.49,
+        price: 320,
         category: 'Dairy',
-        aisle: 'A1',
+        section: 'Dairy & Eggs',
         expiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
         description: 'Creamy Greek yogurt',
         inStock: true,
@@ -176,7 +176,7 @@ export default function HomePage() {
     }
   };
   
-  const formatPrice = (price: number) => `$${price.toFixed(2)}`;
+  const formatPrice = (price: number) => `Rs. ${price.toFixed(2)}`;
   const formatDate = (date: Date) => date.toLocaleDateString();
   
   return (
@@ -232,8 +232,8 @@ export default function HomePage() {
                 <div key={product.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
                     <h4 className="font-medium">{product.name}</h4>
-                    <p className="text-sm text-gray-600">{product.category} - {product.aisle}</p>
-                    <p className="text-sm text-gray-600">Expires: {formatDate(product.expiryDate)}</p>
+                    <p className="text-sm text-gray-600">{product.category} - {product.section}</p>
+                    <p className="text-sm text-gray-600">Expires: {product.expiryDate ? formatDate(product.expiryDate) : 'N/A'}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-lg">{formatPrice(product.price)}</p>
@@ -280,9 +280,9 @@ export default function HomePage() {
             <div key={product.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
               <div>
                 <h4 className="font-medium">{product.name}</h4>
-                <p className="text-sm text-gray-600">{product.category} - {product.aisle}</p>
+                <p className="text-sm text-gray-600">{product.category} - {product.section}</p>
                 <p className="text-sm text-gray-600">Stock: {product.quantity}</p>
-                <p className="text-sm text-gray-600">Expires: {formatDate(product.expiryDate)}</p>
+                <p className="text-sm text-gray-600">Expires: {product.expiryDate ? formatDate(product.expiryDate) : 'N/A'}</p>
               </div>
               <div className="text-right">
                 <p className="font-semibold text-lg">{formatPrice(product.price)}</p>
