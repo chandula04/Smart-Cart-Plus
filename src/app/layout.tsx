@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -21,27 +22,24 @@ export default function RootLayout({
           <header className="bg-white shadow-sm border-b">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center h-16">
-                <div className="flex items-center">
+                <Link href="/" className="flex items-center">
                   <h1 className="text-2xl font-bold text-gray-900">
                     SmartCart Plus
                   </h1>
-                  <span className="ml-2 text-sm text-gray-500">
-                    PDSA Project
-                  </span>
-                </div>
+                </Link>
                 <nav className="flex space-x-8">
-                  <a href="/" className="text-gray-700 hover:text-gray-900 font-medium">
+                  <Link href="/" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                     Home
-                  </a>
-                  <a href="/products" className="text-gray-700 hover:text-gray-900 font-medium">
+                  </Link>
+                  <Link href="/products" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                     Products
-                  </a>
-                  <a href="/navigation" className="text-gray-700 hover:text-gray-900 font-medium">
+                  </Link>
+                  <Link href="/navigation" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                     Navigation
-                  </a>
-                  <a href="/staff" className="text-gray-700 hover:text-gray-900 font-medium">
+                  </Link>
+                  <Link href="/staff" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
                     Staff Dashboard
-                  </a>
+                  </Link>
                 </nav>
               </div>
             </div>
@@ -54,7 +52,7 @@ export default function RootLayout({
           <footer className="bg-white border-t mt-12">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <p className="text-center text-gray-500 text-sm">
-                © 2025 SmartCart Plus - NIBM HDSE PDSA Project
+                © 2025 SmartCart Plus - NIBM HDSE
               </p>
             </div>
           </footer>

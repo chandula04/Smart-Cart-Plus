@@ -184,37 +184,36 @@ export default function HomePage() {
       {/* Hero Section */}
       <div className="bg-white rounded-lg shadow-md p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Welcome to SmartCart Plus
+          Welcome to the Shopping System
         </h1>
         <p className="text-lg text-gray-600 mb-6">
-          Experience intelligent shopping with advanced algorithms for product search, 
-          navigation, and inventory management.
+          Experience intelligent shopping with advanced search, navigation, and inventory management.
         </p>
         
-        {/* Algorithm Features */}
+        {/* Features */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-900">Binary Search</h3>
-            <p className="text-blue-700 text-sm">Fast product lookup O(log n)</p>
+            <h3 className="font-semibold text-blue-900">Fast Search</h3>
+            <p className="text-blue-700 text-sm">Quick product lookup</p>
           </div>
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h3 className="font-semibold text-green-900">Merge Sort</h3>
-            <p className="text-green-700 text-sm">Efficient sorting O(n log n)</p>
+            <h3 className="font-semibold text-green-900">Smart Sorting</h3>
+            <p className="text-green-700 text-sm">Efficient product organization</p>
           </div>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-            <h3 className="font-semibold text-purple-900">Dijkstra + Rush Hour</h3>
-            <p className="text-purple-700 text-sm">Optimal pathfinding with congestion</p>
+            <h3 className="font-semibold text-purple-900">Navigation</h3>
+            <p className="text-purple-700 text-sm">Optimal pathfinding</p>
           </div>
           <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-            <h3 className="font-semibold text-orange-900">Min-Heap + BFS</h3>
-            <p className="text-orange-700 text-sm">Smart alerts & recommendations</p>
+            <h3 className="font-semibold text-orange-900">Alerts & Suggestions</h3>
+            <p className="text-orange-700 text-sm">Smart recommendations</p>
           </div>
         </div>
       </div>
       
       {/* Search Section */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">Product Search (Binary Search)</h2>
+        <h2 className="text-2xl font-semibold mb-4">Product Search</h2>
         <div className="mb-4">
           <input
             type="text"
@@ -254,7 +253,7 @@ export default function HomePage() {
       
       {/* Sorting Section */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">Product Catalog (Merge Sort)</h2>
+        <h2 className="text-2xl font-semibold mb-4">Product Catalog</h2>
         <div className="mb-4 flex gap-2">
           <button
             onClick={() => handleSort('name')}
@@ -310,7 +309,7 @@ export default function HomePage() {
       {/* Navigation Path */}
       {navigationPath && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-semibold mb-4">Rush Hour Navigator</h2>
+          <h2 className="text-2xl font-semibold mb-4">Store Navigation</h2>
           <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
             <p className="font-medium">Optimal Path Found!</p>
             <p className="text-sm text-gray-600">
@@ -362,7 +361,7 @@ export default function HomePage() {
       
       {/* Expiry Alerts */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">Smart Expiry Alerts (Min-Heap)</h2>
+        <h2 className="text-2xl font-semibold mb-4">Expiry Alerts</h2>
         <div className="space-y-2">
           {expiryAlerts.map((alert, index) => (
             <div key={alert.product.id} className={`p-3 rounded-lg border ${
@@ -397,7 +396,7 @@ export default function HomePage() {
       
       {/* Recommendations */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">Product Recommendations (BFS)</h2>
+        <h2 className="text-2xl font-semibold mb-4">Product Recommendations</h2>
         <div className="space-y-2">
           {recommendations.map((rec, index) => (
             <div key={rec.product.id} className="p-4 bg-green-50 border border-green-200 rounded-lg">

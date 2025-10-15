@@ -134,7 +134,7 @@ export default function StaffDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Staff Dashboard</h1>
             <p className="text-gray-600">
-              Smart Expiry Alert System - Monitor products nearing expiration using Min-Heap algorithm
+              Smart Expiry Alert System - Monitor products nearing expiration
             </p>
           </div>
           <button
@@ -212,23 +212,6 @@ export default function StaffDashboard() {
                 {formatPrice(getTotalValue(urgentAlerts))}
               </p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Algorithm Info */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
-        <div className="flex items-center space-x-3 mb-3">
-          <div className="p-2 bg-purple-600 text-white rounded-lg">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-purple-900">Min-Heap Algorithm</h3>
-            <p className="text-purple-700 text-sm">
-              Efficiently maintains priority queue of products by expiry date • O(log n) insert/extract
-            </p>
           </div>
         </div>
       </div>

@@ -142,7 +142,7 @@ export default function ProductsPage() {
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search Products (Binary Search)
+              Search Products
             </label>
             <input
               type="text"
@@ -197,7 +197,7 @@ export default function ProductsPage() {
           {/* Sort */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sort By (Merge Sort)
+              Sort By
             </label>
             <select
               value={sortBy}
@@ -216,14 +216,6 @@ export default function ProductsPage() {
           <p className="text-sm text-gray-600">
             Showing {filteredProducts.length} of {products.length} products
           </p>
-          <div className="flex space-x-2 text-xs">
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
-              Binary Search: O(log n)
-            </span>
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded">
-              Merge Sort: O(n log n)
-            </span>
-          </div>
         </div>
       </div>
 
