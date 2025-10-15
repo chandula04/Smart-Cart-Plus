@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { BinarySearch } from '@/algorithms/binarySearch';
 import { MergeSort } from '@/algorithms/mergeSort';
 import { Product } from '@/types';
+import { useCart } from '@/contexts/CartContext';
 
 export default function ProductsPage() {
+  const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -264,8 +266,14 @@ export default function ProductsPage() {
 
                 {/* Actions */}
                 <div className="flex space-x-2">
-                  <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                    Add to Cart
+                  <button 
+                    onClick={() => {
+                      addToCart(product);
+                      alert(`${product.name} added to cart!`);
+                    }}
+                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    🛒 Add to Cart
                   </button>
                   <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                     Details

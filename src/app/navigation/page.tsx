@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { RushHourNavigator } from '@/algorithms/rushHourNavigator';
 import { Position, NavigationPath } from '@/types';
 
-// Store sections with real supermarket categories
+// Store sections with real supermarket categories and shelf numbers
 interface StoreSection {
   name: string;
   position: Position;
@@ -12,102 +12,114 @@ interface StoreSection {
   products: string[];
   color: string;
   description: string;
+  shelfNumber: number; // Shelf number in the store (1-10)
 }
 
 export default function NavigationPage() {
   const [navigator] = useState(() => new RushHourNavigator());
   
-  // Define actual store sections
+  // Define actual store sections with shelf numbers
   const storeSections: StoreSection[] = [
     { 
-      name: 'Entrance', 
+      name: 'Cashier Counter', 
       position: { x: 0, y: 0 }, 
-      icon: '🚪', 
+      icon: '�‍💼', 
       products: [], 
-      color: 'bg-gray-50',
-      description: 'Main entrance'
+      color: 'bg-purple-50',
+      description: 'Staff assistance desk',
+      shelfNumber: 0
     },
     { 
       name: 'Dairy & Eggs', 
       position: { x: 1, y: 0 }, 
       icon: '🥛', 
-      products: ['Milk', 'Cheese', 'Yogurt', 'Butter', 'Eggs'], 
+      products: ['Milk', 'Cheese', 'Yogurt', 'Butter', 'Eggs', 'Cream'], 
       color: 'bg-blue-50',
-      description: 'Fresh dairy products'
+      description: 'Fresh dairy products',
+      shelfNumber: 1
     },
     { 
       name: 'Bakery', 
       position: { x: 2, y: 0 }, 
       icon: '🍞', 
-      products: ['Bread', 'Croissants', 'Cakes', 'Pastries', 'Buns'], 
+      products: ['Bread', 'Croissants', 'Cakes', 'Pastries', 'Buns', 'Muffins'], 
       color: 'bg-yellow-50',
-      description: 'Fresh baked goods'
+      description: 'Fresh baked goods',
+      shelfNumber: 2
     },
     { 
       name: 'Fresh Fruits', 
       position: { x: 3, y: 0 }, 
       icon: '🍎', 
-      products: ['Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries'], 
+      products: ['Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries', 'Mangoes', 'Pineapple'], 
       color: 'bg-green-50',
-      description: 'Fresh seasonal fruits'
+      description: 'Fresh seasonal fruits',
+      shelfNumber: 3
     },
     
     { 
       name: 'Vegetables', 
       position: { x: 0, y: 1 }, 
       icon: '🥗', 
-      products: ['Lettuce', 'Tomatoes', 'Carrots', 'Onions', 'Potatoes'], 
+      products: ['Lettuce', 'Tomatoes', 'Carrots', 'Onions', 'Potatoes', 'Cabbage', 'Beans'], 
       color: 'bg-green-100',
-      description: 'Fresh vegetables'
+      description: 'Fresh vegetables',
+      shelfNumber: 4
     },
     { 
-      name: 'Customer Service', 
+      name: 'Meat & Seafood', 
       position: { x: 1, y: 1 }, 
-      icon: 'ℹ️', 
-      products: [], 
-      color: 'bg-purple-50',
-      description: 'Help desk & returns'
+      icon: '🍗', 
+      products: ['Chicken', 'Beef', 'Fish', 'Pork', 'Prawns', 'Mutton', 'Salmon'], 
+      color: 'bg-red-50',
+      description: 'Fresh meat & seafood',
+      shelfNumber: 5
     },
     { 
       name: 'Beverages', 
       position: { x: 2, y: 1 }, 
       icon: '🥤', 
-      products: ['Water', 'Juice', 'Soda', 'Tea', 'Coffee'], 
+      products: ['Water', 'Juice', 'Soda', 'Tea', 'Coffee', 'Energy Drinks', 'Milk Drinks'], 
       color: 'bg-cyan-50',
-      description: 'Drinks & beverages'
+      description: 'Drinks & beverages',
+      shelfNumber: 6
     },
     { 
-      name: 'Meat & Seafood', 
+      name: 'Snacks & Sweets', 
       position: { x: 3, y: 1 }, 
-      icon: '🍗', 
-      products: ['Chicken', 'Beef', 'Fish', 'Pork', 'Prawns'], 
-      color: 'bg-red-50',
-      description: 'Fresh meat & seafood'
+      icon: '�', 
+      products: ['Chips', 'Cookies', 'Candy', 'Nuts', 'Chocolate', 'Biscuits', 'Crackers'], 
+      color: 'bg-orange-50',
+      description: 'Snacks & confectionery',
+      shelfNumber: 7
     },
     
     { 
       name: 'Frozen Foods', 
       position: { x: 0, y: 2 }, 
       icon: '🧊', 
-      products: ['Ice Cream', 'Frozen Vegetables', 'Frozen Pizza', 'Frozen Fish'], 
+      products: ['Ice Cream', 'Frozen Vegetables', 'Frozen Pizza', 'Frozen Fish', 'Frozen Meals'], 
       color: 'bg-blue-100',
-      description: 'Frozen items'
+      description: 'Frozen items',
+      shelfNumber: 8
     },
     { 
-      name: 'Snacks & Sweets', 
+      name: 'Canned & Packaged', 
       position: { x: 1, y: 2 }, 
-      icon: '🍿', 
-      products: ['Chips', 'Cookies', 'Candy', 'Nuts', 'Chocolate'], 
-      color: 'bg-orange-50',
-      description: 'Snacks & confectionery'
+      icon: '🥫', 
+      products: ['Canned Beans', 'Pasta', 'Rice', 'Canned Tuna', 'Sauce', 'Noodles'], 
+      color: 'bg-amber-50',
+      description: 'Canned goods & dry foods',
+      shelfNumber: 9
     },
     { 
       name: 'Household Items', 
       position: { x: 2, y: 2 }, 
       icon: '🧹', 
-      products: ['Cleaning Supplies', 'Paper Towels', 'Detergent', 'Soap'], 
+      products: ['Cleaning Supplies', 'Paper Towels', 'Detergent', 'Soap', 'Tissues', 'Bleach'], 
       color: 'bg-pink-50',
-      description: 'Household essentials'
+      description: 'Household essentials',
+      shelfNumber: 10
     },
     { 
       name: 'Checkout Counter', 
@@ -115,7 +127,8 @@ export default function NavigationPage() {
       icon: '💳', 
       products: [], 
       color: 'bg-green-50',
-      description: 'Payment counter'
+      description: 'Payment counter',
+      shelfNumber: 0
     },
   ];
 
@@ -197,10 +210,10 @@ export default function NavigationPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">🗺️ Store Navigator</h1>
-        <p className="text-blue-100">
-          Find the fastest route to any product or section in the store
+      <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+        <h1 className="text-3xl font-bold mb-2">�‍💼 Staff Product Locator</h1>
+        <p className="text-purple-100">
+          Help customers find products quickly - Search and get shelf numbers instantly
         </p>
       </div>
 
@@ -208,7 +221,7 @@ export default function NavigationPage() {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold mb-4 flex items-center">
           <span className="mr-2">🔍</span>
-          Quick Product Search
+          Search Product for Customer
         </h2>
         
         <div className="mb-4">
@@ -344,15 +357,20 @@ export default function NavigationPage() {
                       className={`w-32 h-32 border-2 ${getCellStyle(section)} transition-all cursor-pointer flex flex-col items-center justify-center text-center p-3 m-1 rounded-lg`}
                       onClick={() => handleSectionSelect(section)}
                     >
-                      <div className="text-3xl mb-2">{section.icon}</div>
+                      <div className="text-3xl mb-1">{section.icon}</div>
                       <div className="text-xs font-bold text-gray-800 leading-tight">
                         {section.name}
                       </div>
+                      {section.shelfNumber > 0 && (
+                        <div className="mt-1 text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
+                          Shelf #{section.shelfNumber}
+                        </div>
+                      )}
                       {isStartSection(section) && (
-                        <div className="mt-1 text-xs font-bold text-green-700">YOU ARE HERE</div>
+                        <div className="mt-1 text-xs font-bold text-green-700">STAFF HERE</div>
                       )}
                       {isDestinationSection(section) && (
-                        <div className="mt-1 text-xs font-bold text-red-700">DESTINATION</div>
+                        <div className="mt-1 text-xs font-bold text-red-700">TARGET</div>
                       )}
                     </div>
                   );
@@ -368,87 +386,69 @@ export default function NavigationPage() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <span className="mr-2">📋</span>
-            Your Route Details
+            Product Location Details
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="text-sm text-blue-600 font-medium mb-1">Walking Distance</div>
-              <div className="text-3xl font-bold text-blue-900">
-                {navigationPath.totalDistance.toFixed(0)}m
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+              <div className="text-sm text-purple-600 font-medium mb-1">Target Section</div>
+              <div className="text-2xl font-bold text-purple-900 flex items-center">
+                <span className="mr-2">{selectedDestination.icon}</span>
+                {selectedDestination.name}
               </div>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <div className="text-sm text-green-600 font-medium mb-1">Estimated Time</div>
-              <div className="text-3xl font-bold text-green-900">
-                {navigationPath.estimatedTime.toFixed(1)} min
-              </div>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-              <div className="text-sm text-orange-600 font-medium mb-1">Traffic Level</div>
-              <div className="text-3xl font-bold text-orange-900">
-                {navigationPath.congestionLevel < 1.5 ? '🟢 Clear' : 
-                 navigationPath.congestionLevel < 2.5 ? '🟡 Moderate' : '🔴 Busy'}
+            <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+              <div className="text-sm text-green-600 font-medium mb-1">Shelf Number</div>
+              <div className="text-5xl font-bold text-green-900 text-center">
+                {selectedDestination.shelfNumber > 0 ? selectedDestination.shelfNumber : 'N/A'}
               </div>
             </div>
           </div>
 
-          {/* Step-by-Step Directions */}
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-3 text-lg">Step-by-Step Directions:</h3>
-            <div className="space-y-3">
-              {getPathSteps().map((section, index) => (
-                <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex-shrink-0 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl">{section.icon}</span>
-                      <div className="font-semibold text-gray-900 text-lg">{section.name}</div>
-                    </div>
-                    <div className="text-sm text-gray-600 mt-1">{section.description}</div>
-                    {section.products.length > 0 && (
-                      <div className="text-xs text-gray-500 mt-1">
-                        Available: {section.products.slice(0, 3).join(', ')}
-                        {section.products.length > 3 && '...'}
-                      </div>
-                    )}
-                  </div>
-                  {index === 0 && (
-                    <span className="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
-                      Start
-                    </span>
-                  )}
-                  {index === getPathSteps().length - 1 && (
-                    <span className="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
-                      Destination
-                    </span>
-                  )}
-                  {index > 0 && index < getPathSteps().length - 1 && (
-                    <span className="text-gray-400">
-                      ↓
-                    </span>
-                  )}
-                </div>
-              ))}
+          {selectedDestination.shelfNumber > 0 && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center">
+                <span className="mr-2">💬</span>
+                Tell the Customer:
+              </h3>
+              <p className="text-blue-800 text-lg">
+                &quot;You can find <strong>{searchQuery || selectedDestination.name}</strong> at <strong className="text-2xl">Shelf #{selectedDestination.shelfNumber}</strong> - that&apos;s the <strong>{selectedDestination.name}</strong> section.&quot;
+              </p>
             </div>
+          )}
+
+          {/* Available Products in This Section */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-3 text-lg">Products Available in {selectedDestination.name}:</h3>
+            {selectedDestination.products.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {selectedDestination.products.map((product, index) => (
+                  <div key={index} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <span className="text-xl">{selectedDestination.icon}</span>
+                    <span className="text-sm font-medium text-gray-800">{product}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600 italic">This is a service counter - no products available.</p>
+            )}
           </div>
         </div>
       )}
 
-      {/* Help Section */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="font-semibold text-blue-900 mb-2 flex items-center">
+      {/* Staff Instructions */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+        <h3 className="font-semibold text-purple-900 mb-3 flex items-center">
           <span className="mr-2">💡</span>
-          How to Use
+          Staff Instructions - How to Help Customers
         </h3>
-        <ul className="text-blue-800 text-sm space-y-1">
-          <li>• <strong>Search for a product</strong> in the search box above</li>
-          <li>• <strong>Click You are at</strong> to set your current location</li>
-          <li>• <strong>Click I want to go to</strong> to select your destination</li>
-          <li>• <strong>Click Show Me The Way</strong> to see the fastest route</li>
-          <li>• <strong>Follow the blue path</strong> on the store map</li>
+        <ul className="text-purple-800 text-sm space-y-2">
+          <li>• <strong>Step 1:</strong> Customer asks &quot;Where can I find [product]?&quot;</li>
+          <li>• <strong>Step 2:</strong> Start from &quot;Cashier Counter&quot; (where you are)</li>
+          <li>• <strong>Step 3:</strong> Type the product name in the search box</li>
+          <li>• <strong>Step 4:</strong> Click on the product from suggestions</li>
+          <li>• <strong>Step 5:</strong> Tell customer the <strong className="text-lg">SHELF NUMBER</strong> shown</li>
+          <li>• <strong>Example:</strong> &quot;You&apos;ll find Milk at Shelf #1 in the Dairy section&quot;</li>
         </ul>
       </div>
     </div>
