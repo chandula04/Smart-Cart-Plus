@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+// @ts-ignore
 import './globals.css'
 import Link from 'next/link'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'SmartCart Plus - Intelligent Shopping System',
+  title: 'SmartCart Plus 🛒',
   description: 'A modern shopping system with advanced algorithms for optimal navigation and smart inventory management',
 }
 
