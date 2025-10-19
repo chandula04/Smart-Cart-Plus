@@ -129,7 +129,6 @@ export class RushHourNavigator {
         path: [],
         totalDistance: Infinity,
         estimatedTime: Infinity,
-        congestionLevel: 0
       };
     }
     
@@ -141,7 +140,6 @@ export class RushHourNavigator {
       path: result.path,
       totalDistance,
       estimatedTime,
-      congestionLevel: avgCongestion
     };
   }
   
