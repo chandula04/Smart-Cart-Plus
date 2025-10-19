@@ -9,99 +9,60 @@ import { SmartExpiryAlert } from '@/algorithms/smartExpiryAlert';
 import { ProductRecommendationSystem } from '@/algorithms/productRecommendation';
 
 // Types
-import { Product, CartItem, Position, NavigationPath, ExpiryAlert, Recommendation } from '@/types';
+import { Product, Position, NavigationPath, ExpiryAlert, Recommendation } from '@/types';
+import { observeProducts, updateProduct } from '@/lib/db';
+import { useCart } from '@/contexts/CartContext';
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [suggestions, setSuggestions] = useState<Product[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [currentPosition] = useState<Position>({ x: 0, y: 0 });
   const [navigationPath, setNavigationPath] = useState<NavigationPath | null>(null);
   const [expiryAlerts, setExpiryAlerts] = useState<ExpiryAlert[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const { cart, addToCart } = useCart();
   
   // Initialize algorithms
   const [navigator] = useState(() => new RushHourNavigator());
   const [expirySystem] = useState(() => new SmartExpiryAlert());
   const [recommendationSystem] = useState(() => new ProductRecommendationSystem());
   
-  // Sample data
+  // Live data from Firestore: products, expiry alerts, basic recommendations
   useEffect(() => {
-    const sampleProducts: Product[] = [
-      {
-        id: '1',
-        name: 'Organic Milk',
-        price: 450,
-        category: 'Dairy',
-        section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days
-        description: 'Fresh organic whole milk',
-        inStock: true,
-        quantity: 25
-      },
-      {
-        id: '2',
-        name: 'Whole Wheat Bread',
-        price: 180,
-        category: 'Bakery',
-        section: 'Bakery',
-        expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
-        description: 'Freshly baked whole wheat bread',
-        inStock: true,
-        quantity: 15
-      },
-      {
-        id: '3',
-        name: 'Fresh Bananas',
-        price: 280,
-        category: 'Produce',
-        section: 'Fresh Fruits',
-        expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
-        description: 'Ripe yellow bananas',
-        inStock: true,
-        quantity: 40
-      },
-      {
-        id: '4',
-        name: 'Chicken Breast',
-        price: 850,
-        category: 'Meat',
-        section: 'Meat & Seafood',
-        expiryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day
-        description: 'Fresh chicken breast',
-        inStock: true,
-        quantity: 12
-      },
-      {
-        id: '5',
-        name: 'Greek Yogurt',
-        price: 320,
-        category: 'Dairy',
-        section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
-        description: 'Creamy Greek yogurt',
-        inStock: true,
-        quantity: 30
-      }
-    ];
-    
-    setProducts(sampleProducts);
-  // Catalog removed from Home: we no longer maintain a sorted list
-    
-    // Initialize expiry alerts
-    sampleProducts.forEach(product => {
-      expirySystem.addProduct(product);
-      recommendationSystem.addProduct(product);
+    const unsub = observeProducts((items) => {
+      // Normalize expiryDate if it's a Firestore Timestamp
+      const normalized = items.map((p) => {
+        const exp: any = (p as any).expiryDate;
+        return {
+          ...p,
+          expiryDate: exp && typeof exp.toDate === 'function' ? exp.toDate() : exp,
+        } as Product;
+      });
+      setProducts(normalized);
+
+      // Rebuild expiry system from unhandled products
+      expirySystem.clear();
+      normalized
+        .filter(p => !p.expiryHandled)
+        .forEach(p => expirySystem.addProduct(p));
+      setExpiryAlerts(expirySystem.getTopExpiringProducts(5));
+
+      // Simple real-data recommendations: most stocked items
+      const top = [...normalized]
+        .filter(p => p.inStock)
+        .sort((a, b) => (b.quantity || 0) - (a.quantity || 0))
+        .slice(0, 5)
+        .map((p) => ({
+          product: p,
+          reason: 'Popular and in stock',
+          confidence: Math.min((p.quantity || 0) / Math.max(1, normalized[0]?.quantity || 1), 1),
+        }));
+      setRecommendations(top);
     });
-    
-    // Initialize alerts and recommendations inline to avoid stale deps
-    const initialAlerts = expirySystem.getTopExpiringProducts(5);
-    setExpiryAlerts(initialAlerts);
-    const trending = recommendationSystem.getTrendingProducts(5);
-    setRecommendations(trending);
-  }, [expirySystem, recommendationSystem]);
+    return () => unsub();
+  }, [expirySystem]);
   
   // Search functionality using Binary Search
   const handleSearch = (term: string) => {
@@ -133,22 +94,7 @@ export default function HomePage() {
   
   // Catalog sorting removed from Home
   
-  // Add to cart functionality
-  const addToCart = (product: Product) => {
-    const existingItem = cart.find(item => item.product.id === product.id);
-    if (existingItem) {
-      setCart(cart.map(item => 
-        item.product.id === product.id 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
-      setCart([...cart, { product, quantity: 1 }]);
-    }
-    
-    // Update recommendations based on cart
-    updateRecommendations();
-  };
+  // Add to cart handled by global CartContext (Firestore-synced)
   
   // Navigate to product using Rush Hour Navigator
   const navigateToProduct = (product: Product) => {
@@ -164,21 +110,15 @@ export default function HomePage() {
   };
 
   // Mark an expiry alert as handled
-  const handleMarkAsHandled = (productId: string) => {
+  const handleMarkAsHandled = async (productId: string) => {
+    await updateProduct(productId, { expiryHandled: true });
     expirySystem.removeProduct(productId);
     updateExpiryAlerts();
   };
   
   // Update recommendations
   const updateRecommendations = () => {
-    if (cart.length > 0) {
-      const cartProductIds = cart.map(item => item.product.id);
-      const cartRecs = recommendationSystem.getCartBasedRecommendations(cartProductIds);
-      setRecommendations(cartRecs);
-    } else {
-      const trending = recommendationSystem.getTrendingProducts(5);
-      setRecommendations(trending);
-    }
+    // Keep simple: already set from Firestore products; could be enhanced with cart data later
   };
   
   const formatPrice = (price: number) => `Rs. ${price.toFixed(2)}`;

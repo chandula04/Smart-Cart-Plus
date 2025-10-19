@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Link from 'next/link'
 import { CartProvider, useCart } from '@/contexts/CartContext'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -34,7 +35,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <CartProvider>
+  <AuthProvider>
+  <CartProvider>
           <div className="min-h-screen bg-gray-50">
             <header className="bg-white shadow-sm border-b">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,7 +77,8 @@ export default function RootLayout({
               </div>
             </footer>
           </div>
-        </CartProvider>
+  </CartProvider>
+  </AuthProvider>
       </body>
     </html>
   )

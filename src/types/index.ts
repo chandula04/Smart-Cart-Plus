@@ -9,6 +9,7 @@ export interface Product {
   image?: string;
   inStock: boolean;
   quantity: number;
+  expiryHandled?: boolean; // Whether expiry alert was handled (persisted in Firestore)
 }
 
 export interface CartItem {

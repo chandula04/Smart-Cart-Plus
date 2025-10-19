@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BinarySearch } from '@/algorithms/binarySearch';
 import { MergeSort } from '@/algorithms/mergeSort';
 import { Product } from '@/types';
+import { observeProducts } from '@/lib/db';
 import { useCart } from '@/contexts/CartContext';
 
 export default function ProductsPage() {
@@ -15,63 +16,20 @@ export default function ProductsPage() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [priceRange, setPriceRange] = useState({ min: 0, max: 5000 });
 
-  // Sample product data
+  // Live Firestore products
   useEffect(() => {
-    const sampleProducts: Product[] = [
-      {
-        id: '1', name: 'Organic Milk', price: 450, category: 'Dairy', section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-        description: 'Fresh organic whole milk from local farms', inStock: true, quantity: 25
-      },
-      {
-        id: '2', name: 'Whole Wheat Bread', price: 180, category: 'Bakery', section: 'Bakery',
-        expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-        description: 'Freshly baked whole wheat bread', inStock: true, quantity: 15
-      },
-      {
-        id: '3', name: 'Fresh Bananas', price: 280, category: 'Produce', section: 'Fresh Fruits',
-        expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        description: 'Ripe yellow bananas, perfect for smoothies', inStock: true, quantity: 40
-      },
-      {
-        id: '4', name: 'Chicken Breast', price: 850, category: 'Meat', section: 'Meat & Seafood',
-        expiryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-        description: 'Fresh boneless chicken breast', inStock: true, quantity: 12
-      },
-      {
-        id: '5', name: 'Greek Yogurt', price: 320, category: 'Dairy', section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-        description: 'Creamy Greek yogurt with probiotics', inStock: true, quantity: 30
-      },
-      {
-        id: '6', name: 'Salmon Fillet', price: 1250, category: 'Seafood', section: 'Meat & Seafood',
-        expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-        description: 'Fresh Atlantic salmon fillet', inStock: true, quantity: 8
-      },
-      {
-        id: '7', name: 'Organic Apples', price: 380, category: 'Produce', section: 'Fresh Fruits',
-        expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        description: 'Crisp organic Gala apples', inStock: true, quantity: 50
-      },
-      {
-        id: '8', name: 'Cheddar Cheese', price: 650, category: 'Dairy', section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-        description: 'Aged cheddar cheese block', inStock: true, quantity: 20
-      },
-      {
-        id: '9', name: 'Pasta Sauce', price: 420, category: 'Pantry', section: 'Household Items',
-        expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        description: 'Traditional marinara pasta sauce', inStock: true, quantity: 35
-      },
-      {
-        id: '10', name: 'Ground Beef', price: 920, category: 'Meat', section: 'Meat & Seafood',
-        expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-        description: 'Lean ground beef 90/10', inStock: true, quantity: 18
-      }
-    ];
-
-    setProducts(sampleProducts);
-    setFilteredProducts(sampleProducts);
+    const unsub = observeProducts((items) => {
+      const normalized = items.map((p) => {
+        const exp: any = (p as any).expiryDate;
+        return {
+          ...p,
+          expiryDate: exp && typeof exp.toDate === 'function' ? exp.toDate() : exp,
+        } as Product;
+      });
+      setProducts(normalized);
+      setFilteredProducts(normalized);
+    });
+    return () => unsub();
   }, []);
 
   // Search functionality

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { loadSections } from '@/lib/sectionsStore';
+import { useEffect, useMemo, useState } from 'react';
 import { RushHourNavigator } from '@/algorithms/rushHourNavigator';
 import { Position, NavigationPath } from '@/types';
+import { observeSections, observeProducts } from '@/lib/db';
 
 // Store sections with real supermarket categories and shelf numbers
 interface StoreSection {
@@ -20,7 +20,7 @@ export default function NavigationPage() {
   const [navigator] = useState(() => new RushHourNavigator());
   
   // Default store sections with shelf numbers (used as baseline)
-  const defaultSections: StoreSection[] = [
+  const defaultSections: StoreSection[] = useMemo(() => [
     { 
       name: 'Cashier Counter', 
       position: { x: 0, y: 0 }, 
@@ -131,36 +131,46 @@ export default function NavigationPage() {
       description: 'Payment counter',
       shelfNumber: 0
     },
-  ];
+  ], []);
 
-  // Merge with persisted sections from Staff Dashboard (by name)
-  const persisted = loadSections();
-  const persistedByName = new Map(persisted.map(s => [s.name, s]));
-  const storeSections: StoreSection[] = [
-    // Map defaults, override with persisted position/icon/shelf when available
-    ...defaultSections.map(sec => {
-      const p = persistedByName.get(sec.name);
-      if (!p) return sec;
-      return {
-        ...sec,
-        position: { x: p.x ?? sec.position.x, y: p.y ?? sec.position.y },
-        icon: p.icon ?? sec.icon,
-        shelfNumber: typeof p.shelfNumber === 'number' ? p.shelfNumber : sec.shelfNumber,
-      } as StoreSection;
-    }),
-    // Add any extra sections that exist in persistence but not in defaults
-    ...persisted
-      .filter(p => !defaultSections.some(d => d.name === p.name))
-      .map(p => ({
-        name: p.name,
-        position: { x: p.x ?? 0, y: p.y ?? 0 },
-        icon: p.icon ?? '📦',
-        products: [],
-        color: 'bg-gray-50',
-        description: 'Custom section',
-        shelfNumber: p.shelfNumber ?? 0,
-      }) as StoreSection)
-  ];
+  // Live sections from Firestore, overlayed onto defaults by name
+  const [fireSections, setFireSections] = useState<any[]>([]);
+  const [fireProducts, setFireProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const unsubs: Array<() => void> = [];
+    unsubs.push(observeSections((items) => setFireSections(items)));
+    unsubs.push(observeProducts((items) => setFireProducts(items)));
+    return () => unsubs.forEach(u => u());
+  }, []);
+
+  const storeSections: StoreSection[] = useMemo(() => {
+    const persistedByName = new Map(fireSections.map((s: any) => [s.name, s]));
+    const merged = [
+      ...defaultSections.map(sec => {
+        const p: any = persistedByName.get(sec.name);
+        if (!p) return sec;
+        return {
+          ...sec,
+          position: p.x != null && p.y != null ? { x: p.x, y: p.y } : sec.position,
+          icon: p.icon ?? sec.icon,
+          shelfNumber: typeof p.shelfNumber === 'number' ? p.shelfNumber : sec.shelfNumber,
+        } as StoreSection;
+      }),
+      ...fireSections
+        .filter((p: any) => !defaultSections.some(d => d.name === p.name))
+        .map((p: any) => ({
+          name: p.name,
+          position: p.x != null && p.y != null ? { x: p.x, y: p.y } : { x: 0, y: 0 },
+          icon: p.icon ?? '📦',
+          products: [],
+          color: 'bg-gray-50',
+          description: 'Custom section',
+          shelfNumber: p.shelfNumber ?? 0,
+        }) as StoreSection)
+    ];
+    return merged;
+  }, [fireSections, defaultSections]);
 
   // Always start from Cashier Counter (index 0)
   const cashierSection = storeSections[0];
@@ -238,7 +248,13 @@ export default function NavigationPage() {
   };
 
   // Get all products for search suggestions
-  const allProducts = storeSections.flatMap(s => s.products);
+  const allProducts = useMemo(() => {
+    // Prefer Firestore product names if available
+    if (fireProducts.length > 0) {
+      return fireProducts.map((p: any) => p.name as string);
+    }
+    return storeSections.flatMap(s => s.products);
+  }, [fireProducts, storeSections]);
 
   return (
     <div className="space-y-6">

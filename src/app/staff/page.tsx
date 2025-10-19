@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SmartExpiryAlert } from '@/algorithms/smartExpiryAlert';
 import { Product, ExpiryAlert, StoreSection, TrafficData } from '@/types';
-import { loadSections, saveSections } from '@/lib/sectionsStore';
+import { observeProducts, addProduct as addProductDb, observeSections, addSection as addSectionDb, observeTraffic, updateTraffic as updateTrafficDb, addTrafficRecord } from '@/lib/db';
 
 export default function StaffDashboard() {
   const [expiryAlerts, setExpiryAlerts] = useState<ExpiryAlert[]>([]);
@@ -25,7 +25,7 @@ export default function StaffDashboard() {
   });
   
   // Category/Section Management State
-  const [sections, setSections] = useState<StoreSection[]>(() => loadSections());
+  const [sections, setSections] = useState<StoreSection[]>([]);
   const [newSection, setNewSection] = useState({
     name: '',
     position: 'top-left', // Changed from x, y to position selector
@@ -35,25 +35,6 @@ export default function StaffDashboard() {
   
   // Traffic Tracking State
   const [trafficData, setTrafficData] = useState<TrafficData[]>([]);
-
-  const initializeTrafficData = useCallback(() => {
-    // Initialize with sample traffic data
-    const sampleTraffic: TrafficData[] = sections.map(section => ({
-      sectionId: section.id,
-      sectionName: `${section.name}${section.shelfNumber && section.shelfNumber > 0 ? ` (Shelf #${section.shelfNumber})` : ''}`,
-      currentPeople: Math.floor(Math.random() * 20),
-      maxCapacity: 25,
-      congestionLevel: 0,
-      lastUpdated: new Date()
-    }));
-    
-    // Calculate congestion levels
-    sampleTraffic.forEach(data => {
-      data.congestionLevel = data.currentPeople / data.maxCapacity;
-    });
-    
-    setTrafficData(sampleTraffic);
-  }, [sections]);
 
   const updateAlerts = useCallback(() => {
     // Get top 10 expiring products
@@ -65,71 +46,44 @@ export default function StaffDashboard() {
     setUrgentAlerts(urgent);
   }, [expirySystem]);
 
-  // Sample inventory data
+  // Subscribe to Firestore for products/sections/traffic and build expiry alerts
   useEffect(() => {
-    const inventoryProducts: Product[] = [
-      {
-        id: 'inv1', name: 'Milk (Organic)', price: 450, category: 'Dairy', section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), inStock: true, quantity: 15
-      },
-      {
-        id: 'inv2', name: 'Chicken Breast', price: 850, category: 'Meat', section: 'Meat & Seafood',
-        expiryDate: new Date(Date.now() + 0.5 * 24 * 60 * 60 * 1000), inStock: true, quantity: 8
-      },
-      {
-        id: 'inv3', name: 'Bread (Whole Wheat)', price: 180, category: 'Bakery', section: 'Bakery',
-        expiryDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), inStock: true, quantity: 12
-      },
-      {
-        id: 'inv4', name: 'Yogurt (Greek)', price: 320, category: 'Dairy', section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), inStock: true, quantity: 25
-      },
-      {
-        id: 'inv5', name: 'Salmon Fillet', price: 1250, category: 'Seafood', section: 'Meat & Seafood',
-        expiryDate: new Date(Date.now() + 1.5 * 24 * 60 * 60 * 1000), inStock: true, quantity: 6
-      },
-      {
-        id: 'inv6', name: 'Bananas', price: 280, category: 'Produce', section: 'Fresh Fruits',
-        expiryDate: new Date(Date.now() - 0.5 * 24 * 60 * 60 * 1000), inStock: true, quantity: 20
-      },
-      {
-        id: 'inv7', name: 'Ground Beef', price: 920, category: 'Meat', section: 'Meat & Seafood',
-        expiryDate: new Date(Date.now() + 0.8 * 24 * 60 * 60 * 1000), inStock: true, quantity: 10
-      },
-      {
-        id: 'inv8', name: 'Lettuce (Romaine)', price: 150, category: 'Produce', section: 'Vegetables',
-        expiryDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), inStock: true, quantity: 18
-      },
-      {
-        id: 'inv9', name: 'Cheese (Cheddar)', price: 650, category: 'Dairy', section: 'Dairy & Eggs',
-        expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), inStock: true, quantity: 14
-      },
-      {
-        id: 'inv10', name: 'Strawberries', price: 550, category: 'Produce', section: 'Fresh Fruits',
-        expiryDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), inStock: true, quantity: 22
-      }
-    ];
+    const unsubs: Array<() => void> = [];
+    unsubs.push(
+      observeProducts((items) => {
+        setProducts(items);
+        // rebuild expiry system from Firestore (skip handled)
+        expirySystem.clear();
+        items
+          .filter(p => !p.expiryHandled)
+          .forEach(p => {
+            const exp = (p as any).expiryDate;
+            const normalized: Product = {
+              ...p,
+              expiryDate: exp && typeof (exp as any).toDate === 'function' ? (exp as any).toDate() : exp,
+            } as Product;
+            expirySystem.addProduct(normalized);
+          });
+        updateAlerts();
+      })
+    );
+    unsubs.push(
+      observeSections((items) => setSections(items))
+    );
+    unsubs.push(
+      observeTraffic((items) => setTrafficData(items))
+    );
+    return () => unsubs.forEach(u => u());
+  }, [expirySystem, updateAlerts, refreshCount]);
 
-    setProducts(inventoryProducts);
-
-    // Clear and populate expiry system
-    expirySystem.clear();
-    inventoryProducts.forEach(product => {
-      expirySystem.addProduct(product);
-    });
-
-    updateAlerts();
-    initializeTrafficData();
-  }, [expirySystem, refreshCount, updateAlerts, initializeTrafficData]);
-
-  const handleAddProduct = () => {
+  const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.section) {
       alert('Please fill in all required fields (Name, Price, Section)');
       return;
     }
 
     const product: Product = {
-      id: `prod-${Date.now()}`,
+      id: '',
       name: newProduct.name,
       price: parseFloat(newProduct.price),
       category: newProduct.category || 'General',
@@ -139,8 +93,7 @@ export default function StaffDashboard() {
       inStock: true,
       quantity: parseInt(newProduct.quantity) || 0
     };
-
-    setProducts([...products, product]);
+    await addProductDb(product as Omit<Product, 'id'>);
     
     // Add to expiry system if it has an expiry date
     if (product.expiryDate) {
@@ -162,7 +115,7 @@ export default function StaffDashboard() {
     alert('Product added successfully!');
   };
 
-  const handleAddSection = () => {
+  const handleAddSection = async () => {
     if (!newSection.name || !newSection.position) {
       alert('Please fill in all required fields (Name and Position)');
       return;
@@ -187,17 +140,15 @@ export default function StaffDashboard() {
     const coordinates = positionMap[newSection.position];
 
     const section: StoreSection = {
-      id: `section-${Date.now()}`,
+      id: '',
       name: newSection.name,
       x: coordinates.x,
       y: coordinates.y,
       icon: newSection.icon || '📦',
       shelfNumber: newSection.shelfNumber ? Number(newSection.shelfNumber) : 0
     };
-
-  const updated = [...sections, section];
-  setSections(updated);
-  saveSections(updated);
+    const ref = await addSectionDb(section as Omit<StoreSection, 'id'>);
+    await addTrafficRecord(ref.id, section.name);
     
     // Add traffic data for new section
     const newTraffic: TrafficData = {
@@ -222,20 +173,10 @@ export default function StaffDashboard() {
   };
 
   const updateTraffic = (sectionId: string, newCount: number) => {
-    setTrafficData(prevData => 
-      prevData.map(data => {
-        if (data.sectionId === sectionId) {
-          const congestionLevel = newCount / data.maxCapacity;
-          return {
-            ...data,
-            currentPeople: newCount,
-            congestionLevel,
-            lastUpdated: new Date()
-          };
-        }
-        return data;
-      })
-    );
+    const s = trafficData.find(t => t.sectionId === sectionId);
+    if (!s) return;
+    const congestionLevel = newCount / s.maxCapacity;
+    updateTrafficDb(sectionId, { currentPeople: newCount, congestionLevel });
   };
 
   const handleMarkAsHandled = (productId: string) => {
@@ -245,14 +186,9 @@ export default function StaffDashboard() {
 
   const handleRefresh = () => {
     setRefreshCount(prev => prev + 1);
-    const loaded = loadSections();
-    setSections(loaded);
   };
 
-  // Persist sections on any change
-  useEffect(() => {
-    saveSections(sections);
-  }, [sections]);
+  // No local persistence; Firestore is the source of truth
 
   const formatPrice = (price: number) => `Rs. ${price.toFixed(2)}`;
   
