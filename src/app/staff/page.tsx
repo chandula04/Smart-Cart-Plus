@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { SmartExpiryAlert } from '@/algorithms/smartExpiryAlert';
-import { Product, ExpiryAlert, StoreSection, TrafficData } from '@/types';
-import { observeProducts, addProduct as addProductDb, observeSections, addSection as addSectionDb, observeTraffic, updateTraffic as updateTrafficDb, addTrafficRecord } from '@/lib/db';
+import { Product, ExpiryAlert, StoreSection, TrafficData, RemovalLog } from '@/types';
+import { observeProducts, addProduct as addProductDb, observeSections, addSection as addSectionDb, addTrafficRecord, updateProduct as updateProductDb, deleteProduct as deleteProductDb, addRemovalLog, observeRemovalLogs } from '@/lib/db';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function StaffDashboard() {
   const [expiryAlerts, setExpiryAlerts] = useState<ExpiryAlert[]>([]);
   const [urgentAlerts, setUrgentAlerts] = useState<ExpiryAlert[]>([]);
   const [expirySystem] = useState(() => new SmartExpiryAlert());
   const [refreshCount, setRefreshCount] = useState(0);
-  const [activeTab, setActiveTab] = useState<'expiry' | 'products' | 'categories' | 'traffic'>('expiry');
+  const [activeTab, setActiveTab] = useState<'expiry' | 'products' | 'categories' | 'logs'>('expiry');
   
   // Product Management State
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,6 +27,7 @@ export default function StaffDashboard() {
   
   // Category/Section Management State
   const [sections, setSections] = useState<StoreSection[]>([]);
+  const { uid } = useAuth();
   const [newSection, setNewSection] = useState({
     name: '',
     position: 'top-left', // Changed from x, y to position selector
@@ -33,37 +35,46 @@ export default function StaffDashboard() {
     shelfNumber: '' as string | number
   });
   
-  // Traffic Tracking State
-  const [trafficData, setTrafficData] = useState<TrafficData[]>([]);
+  // Removal Logs State
+  const [removalLogs, setRemovalLogs] = useState<RemovalLog[]>([]);
 
   const updateAlerts = useCallback(() => {
-    // Get top 10 expiring products
-    const alerts = expirySystem.getTopExpiringProducts(10);
-    setExpiryAlerts(alerts);
-
-    // Get urgent alerts (expiring within 2 days)
-    const urgent = expirySystem.getProductsExpiringWithin(2);
-    setUrgentAlerts(urgent);
+    // Only show items with 5 days or less; Critical: <=2 days, High: 3-5 days
+    const all = expirySystem.getTopExpiringProducts(100);
+    const filtered = all
+      .filter(a => a.daysUntilExpiry <= 5)
+      .map(alert => ({
+        ...alert,
+        priority: alert.daysUntilExpiry <= 2 ? 1 : 2
+      }));
+    setExpiryAlerts(filtered);
+    setUrgentAlerts(filtered);
   }, [expirySystem]);
 
-  // Subscribe to Firestore for products/sections/traffic and build expiry alerts
+  // Subscribe to Firestore for products/sections/logs and build expiry alerts
   useEffect(() => {
+    if (!uid) return;
     const unsubs: Array<() => void> = [];
     unsubs.push(
       observeProducts((items) => {
         setProducts(items);
         // rebuild expiry system from Firestore (skip handled)
         expirySystem.clear();
-        items
-          .filter(p => !p.expiryHandled)
-          .forEach(p => {
-            const exp = (p as any).expiryDate;
-            const normalized: Product = {
-              ...p,
-              expiryDate: exp && typeof (exp as any).toDate === 'function' ? (exp as any).toDate() : exp,
-            } as Product;
-            expirySystem.addProduct(normalized);
-          });
+        const unhandledItems = items.filter(p => !p.expiryHandled);
+        
+        unhandledItems.forEach(p => {
+          if (!p.id) {
+            console.error('Staff: Product without ID found:', p);
+            return;
+          }
+          
+          const exp = (p as any).expiryDate;
+          const normalized: Product = {
+            ...p,
+            expiryDate: exp && typeof (exp as any).toDate === 'function' ? (exp as any).toDate() : exp,
+          } as Product;
+          expirySystem.addProduct(normalized);
+        });
         updateAlerts();
       })
     );
@@ -71,10 +82,10 @@ export default function StaffDashboard() {
       observeSections((items) => setSections(items))
     );
     unsubs.push(
-      observeTraffic((items) => setTrafficData(items))
+      observeRemovalLogs((logs) => setRemovalLogs(logs))
     );
     return () => unsubs.forEach(u => u());
-  }, [expirySystem, updateAlerts, refreshCount]);
+  }, [expirySystem, updateAlerts, refreshCount, uid]);
 
   const handleAddProduct = async () => {
     if (!newProduct.name || !newProduct.price || !newProduct.section) {
@@ -94,12 +105,6 @@ export default function StaffDashboard() {
       quantity: parseInt(newProduct.quantity) || 0
     };
     await addProductDb(product as Omit<Product, 'id'>);
-    
-    // Add to expiry system if it has an expiry date
-    if (product.expiryDate) {
-      expirySystem.addProduct(product);
-      updateAlerts();
-    }
 
     // Reset form
     setNewProduct({
@@ -149,17 +154,6 @@ export default function StaffDashboard() {
     };
     const ref = await addSectionDb(section as Omit<StoreSection, 'id'>);
     await addTrafficRecord(ref.id, section.name);
-    
-    // Add traffic data for new section
-    const newTraffic: TrafficData = {
-      sectionId: section.id,
-      sectionName: section.name,
-      currentPeople: 0,
-      maxCapacity: 25,
-      congestionLevel: 0,
-      lastUpdated: new Date()
-    };
-    setTrafficData([...trafficData, newTraffic]);
 
     // Reset form
     setNewSection({
@@ -172,16 +166,52 @@ export default function StaffDashboard() {
     alert('Section added successfully!');
   };
 
-  const updateTraffic = (sectionId: string, newCount: number) => {
-    const s = trafficData.find(t => t.sectionId === sectionId);
-    if (!s) return;
-    const congestionLevel = newCount / s.maxCapacity;
-    updateTrafficDb(sectionId, { currentPeople: newCount, congestionLevel });
-  };
+  // No traffic monitoring anymore
 
-  const handleMarkAsHandled = (productId: string) => {
-    expirySystem.removeProduct(productId);
-    setRefreshCount(prev => prev + 1);
+  const handleMarkAsHandled = async (product: Product) => {
+    // Only show for High/Critical; confirm deletion
+    const confirmDelete = window.confirm(
+      `Remove product "${product.name}" from inventory? This will delete it completely and log the removal.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      // Calculate the correct priority for the removal log
+      const daysUntilExpiry = product.expiryDate 
+        ? Math.ceil((product.expiryDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24))
+        : 999;
+      
+      const priority = daysUntilExpiry <= 2 ? 'CRITICAL' : daysUntilExpiry <= 5 ? 'HIGH' : 'MEDIUM';
+      
+      // Create removal log first
+      await addRemovalLog({
+        productId: product.id,
+        name: product.name,
+        category: product.category,
+        section: product.section,
+        price: product.price,
+        quantity: product.quantity,
+        expiryDate: product.expiryDate ? new Date(product.expiryDate) : undefined,
+        removedAt: new Date(),
+        reason: `Expiry risk (${priority}) - handled by staff`,
+      });
+
+      // Delete product from Firestore (source of truth)
+      if (!product.id) {
+        throw new Error('Product ID is missing - cannot delete');
+      }
+      
+      await deleteProductDb(product.id);
+
+      // Local system will be refreshed by Firestore observer
+      // Force an immediate refresh to ensure UI updates
+      setRefreshCount(prev => prev + 1);
+      
+      alert(`Product "${product.name}" has been removed from inventory and logged as ${priority} priority.`);
+    } catch (error) {
+      console.error('Staff: Error in handleMarkAsHandled:', error);
+      alert('Failed to remove product. Please try again.');
+    }
   };
 
   const handleRefresh = () => {
@@ -213,9 +243,9 @@ export default function StaffDashboard() {
 
   const getPriorityText = (priority: number) => {
     switch (priority) {
-      case 1: return 'CRITICAL';
-      case 2: return 'HIGH';
-      case 3: return 'MEDIUM';
+      case 1: return 'CRITICAL'; // ≤2 days
+      case 2: return 'HIGH';     // 3-5 days
+      case 3: return 'MEDIUM';   // 6+ days
       case 4: return 'LOW';
       default: return 'VERY LOW';
     }
@@ -247,7 +277,7 @@ export default function StaffDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Staff Dashboard</h1>
             <p className="text-gray-600">
-              Manage products, sections, track traffic, and monitor expiry alerts
+              Manage products, sections, and monitor expiry alerts
             </p>
           </div>
           <button
@@ -296,14 +326,14 @@ export default function StaffDashboard() {
             📍 Manage Sections
           </button>
           <button
-            onClick={() => setActiveTab('traffic')}
+            onClick={() => setActiveTab('logs')}
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === 'traffic'
+              activeTab === 'logs'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            👥 Traffic Monitor
+            🧾 Removal Logs
           </button>
         </div>
       </div>
@@ -378,7 +408,7 @@ export default function StaffDashboard() {
             </div>
           </div>
 
-          {/* Urgent Alerts */}
+          {/* Urgent Alerts (High/Critical only, <= 5 days) */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">🚨 Urgent Actions Required</h2>
@@ -388,7 +418,10 @@ export default function StaffDashboard() {
             </div>
 
             <div className="space-y-3">
-              {urgentAlerts.slice(0, 5).map((alert, index) => (
+              {urgentAlerts
+                .filter(a => a.daysUntilExpiry <= 5)
+                .slice(0, 10)
+                .map((alert, index) => (
                 <div key={alert.product.id} className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
@@ -417,7 +450,7 @@ export default function StaffDashboard() {
                     </div>
                     
                     <button
-                      onClick={() => handleMarkAsHandled(alert.product.id)}
+                      onClick={() => handleMarkAsHandled(alert.product)}
                       className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
                     >
                       Mark Handled
@@ -428,7 +461,7 @@ export default function StaffDashboard() {
             </div>
           </div>
 
-          {/* All Expiry Alerts Table */}
+          {/* All Expiry Alerts Table (only High/Critical, i.e., <= 5 days) */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">📋 Complete Expiry Monitor</h2>
@@ -450,7 +483,9 @@ export default function StaffDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {expiryAlerts.map((alert, index) => (
+                  {expiryAlerts
+                    .filter(a => a.daysUntilExpiry <= 5)
+                    .map((alert, index) => (
                     <tr key={alert.product.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -487,7 +522,7 @@ export default function StaffDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => handleMarkAsHandled(alert.product.id)}
+                          onClick={() => handleMarkAsHandled(alert.product)}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           Mark Handled
@@ -768,80 +803,44 @@ export default function StaffDashboard() {
         </div>
       )}
 
-      {/* Traffic Monitor Tab */}
-      {activeTab === 'traffic' && (
+      {/* Removal Logs Tab */}
+      {activeTab === 'logs' && (
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Real-Time Traffic Monitor</h2>
-            <p className="text-gray-600 mb-4">
-              Monitor customer traffic in each section. Update people count to track congestion levels for smart navigation.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {trafficData.map(data => (
-                <div key={data.sectionId} className={`border-2 rounded-lg p-4 ${getCongestionColor(data.congestionLevel)}`}>
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="font-semibold text-gray-900">{data.sectionName}</div>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getCongestionColor(data.congestionLevel)}`}>
-                      {getCongestionText(data.congestionLevel)}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Current People:</span>
-                      <span className="font-bold">{data.currentPeople}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Max Capacity:</span>
-                      <span>{data.maxCapacity}</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          data.congestionLevel >= 0.8 ? 'bg-red-600' :
-                          data.congestionLevel >= 0.6 ? 'bg-orange-500' :
-                          data.congestionLevel >= 0.4 ? 'bg-yellow-500' :
-                          'bg-green-500'
-                        }`}
-                        style={{ width: `${(data.congestionLevel * 100)}%` }}
-                      />
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => updateTraffic(data.sectionId, Math.max(0, data.currentPeople - 1))}
-                        className="flex-1 bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm hover:bg-gray-300"
-                      >
-                        -
-                      </button>
-                      <button
-                        onClick={() => updateTraffic(data.sectionId, Math.min(data.maxCapacity, data.currentPeople + 1))}
-                        className="flex-1 bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div className="text-xs text-gray-600 text-center">
-                      Updated: {new Date(data.lastUpdated).toLocaleTimeString()}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Removed Products Log</h2>
+            {removalLogs.length === 0 ? (
+              <p className="text-gray-600">No removals recorded yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Removed At</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Section</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {removalLogs.map((log) => (
+                      <tr key={log.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(log.removedAt).toLocaleString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <div className="font-medium">{log.name}</div>
+                          <div className="text-gray-500 text-xs">{log.category}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.section || 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.quantity}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.expiryDate ? new Date(log.expiryDate).toLocaleDateString() : 'N/A'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{log.reason}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="ml-3">
-                <p className="text-sm text-blue-700">
-                  <strong>How it works:</strong> The traffic data is used by the navigation system to calculate optimal paths.
-                  Higher congestion levels will cause the pathfinding algorithm to prefer less crowded routes.
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}

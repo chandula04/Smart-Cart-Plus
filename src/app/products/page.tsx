@@ -6,9 +6,11 @@ import { MergeSort } from '@/algorithms/mergeSort';
 import { Product } from '@/types';
 import { observeProducts } from '@/lib/db';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ProductsPage() {
   const { addToCart } = useCart();
+  const { uid } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -18,19 +20,27 @@ export default function ProductsPage() {
 
   // Live Firestore products
   useEffect(() => {
+    if (!uid) return;
     const unsub = observeProducts((items) => {
       const normalized = items.map((p) => {
         const exp: any = (p as any).expiryDate;
-        return {
+        const normalizedProduct = {
           ...p,
           expiryDate: exp && typeof exp.toDate === 'function' ? exp.toDate() : exp,
         } as Product;
+        
+        if (!normalizedProduct.id) {
+          console.error('Products: Product without ID found:', normalizedProduct);
+        }
+        
+        return normalizedProduct;
       });
+      
       setProducts(normalized);
       setFilteredProducts(normalized);
     });
     return () => unsub();
-  }, []);
+  }, [uid]);
 
   // Search functionality
   useEffect(() => {
@@ -223,18 +233,19 @@ export default function ProductsPage() {
                 )}
 
                 {/* Actions */}
-                <div className="flex space-x-2">
+                <div className="flex">
                   <button 
                     onClick={() => {
+                      if (!product.id) {
+                        alert('Error: Product has no ID');
+                        return;
+                      }
                       addToCart(product);
                       alert(`${product.name} added to cart!`);
                     }}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     🛒 Add to Cart
-                  </button>
-                  <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                    Details
                   </button>
                 </div>
               </div>

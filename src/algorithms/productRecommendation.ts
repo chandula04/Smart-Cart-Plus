@@ -291,7 +291,7 @@ export class ProductRecommendationSystem {
         name: 'Milk',
         price: 3.99,
         category: 'Dairy',
-        aisle: 'A1',
+        section: 'Dairy & Eggs',
         expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         inStock: true,
         quantity: 100
@@ -301,7 +301,7 @@ export class ProductRecommendationSystem {
         name: 'Bread',
         price: 2.49,
         category: 'Bakery',
-        aisle: 'B2',
+        section: 'Bakery',
         expiryDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
         inStock: true,
         quantity: 50
@@ -311,7 +311,7 @@ export class ProductRecommendationSystem {
         name: 'Butter',
         price: 4.99,
         category: 'Dairy', 
-        aisle: 'A1',
+        section: 'Dairy & Eggs',
         expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         inStock: true,
         quantity: 30
@@ -321,7 +321,7 @@ export class ProductRecommendationSystem {
         name: 'Eggs',
         price: 3.49,
         category: 'Dairy',
-        aisle: 'A1',
+        section: 'Dairy & Eggs',
         expiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
         inStock: true,
         quantity: 75

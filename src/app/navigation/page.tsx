@@ -19,7 +19,7 @@ interface StoreSection {
 export default function NavigationPage() {
   const [navigator] = useState(() => new RushHourNavigator());
   
-  // Default store sections with shelf numbers (used as baseline)
+  // Essential default sections (only Cashier and Checkout for basic functionality)
   const defaultSections: StoreSection[] = useMemo(() => [
     { 
       name: 'Cashier Counter', 
@@ -29,98 +29,6 @@ export default function NavigationPage() {
       color: 'bg-purple-50',
       description: 'Staff assistance desk',
       shelfNumber: 0
-    },
-    { 
-      name: 'Dairy & Eggs', 
-      position: { x: 1, y: 0 }, 
-      icon: '🥛', 
-      products: ['Milk', 'Cheese', 'Yogurt', 'Butter', 'Eggs', 'Cream'], 
-      color: 'bg-blue-50',
-      description: 'Fresh dairy products',
-      shelfNumber: 1
-    },
-    { 
-      name: 'Bakery', 
-      position: { x: 2, y: 0 }, 
-      icon: '🍞', 
-      products: ['Bread', 'Croissants', 'Cakes', 'Pastries', 'Buns', 'Muffins'], 
-      color: 'bg-yellow-50',
-      description: 'Fresh baked goods',
-      shelfNumber: 2
-    },
-    { 
-      name: 'Fresh Fruits', 
-      position: { x: 3, y: 0 }, 
-      icon: '🍎', 
-      products: ['Apples', 'Bananas', 'Oranges', 'Grapes', 'Strawberries', 'Mangoes', 'Pineapple'], 
-      color: 'bg-green-50',
-      description: 'Fresh seasonal fruits',
-      shelfNumber: 3
-    },
-    
-    { 
-      name: 'Vegetables', 
-      position: { x: 0, y: 1 }, 
-      icon: '🥗', 
-      products: ['Lettuce', 'Tomatoes', 'Carrots', 'Onions', 'Potatoes', 'Cabbage', 'Beans'], 
-      color: 'bg-green-100',
-      description: 'Fresh vegetables',
-      shelfNumber: 4
-    },
-    { 
-      name: 'Meat & Seafood', 
-      position: { x: 1, y: 1 }, 
-      icon: '🍗', 
-      products: ['Chicken', 'Beef', 'Fish', 'Pork', 'Prawns', 'Mutton', 'Salmon'], 
-      color: 'bg-red-50',
-      description: 'Fresh meat & seafood',
-      shelfNumber: 5
-    },
-    { 
-      name: 'Beverages', 
-      position: { x: 2, y: 1 }, 
-      icon: '🥤', 
-      products: ['Water', 'Juice', 'Soda', 'Tea', 'Coffee', 'Energy Drinks', 'Milk Drinks'], 
-      color: 'bg-cyan-50',
-      description: 'Drinks & beverages',
-      shelfNumber: 6
-    },
-    { 
-      name: 'Snacks & Sweets', 
-      position: { x: 3, y: 1 }, 
-      icon: '�', 
-      products: ['Chips', 'Cookies', 'Candy', 'Nuts', 'Chocolate', 'Biscuits', 'Crackers'], 
-      color: 'bg-orange-50',
-      description: 'Snacks & confectionery',
-      shelfNumber: 7
-    },
-    
-    { 
-      name: 'Frozen Foods', 
-      position: { x: 0, y: 2 }, 
-      icon: '🧊', 
-      products: ['Ice Cream', 'Frozen Vegetables', 'Frozen Pizza', 'Frozen Fish', 'Frozen Meals'], 
-      color: 'bg-blue-100',
-      description: 'Frozen items',
-      shelfNumber: 8
-    },
-    { 
-      name: 'Canned & Packaged', 
-      position: { x: 1, y: 2 }, 
-      icon: '🥫', 
-      products: ['Canned Beans', 'Pasta', 'Rice', 'Canned Tuna', 'Sauce', 'Noodles'], 
-      color: 'bg-amber-50',
-      description: 'Canned goods & dry foods',
-      shelfNumber: 9
-    },
-    { 
-      name: 'Household Items', 
-      position: { x: 2, y: 2 }, 
-      icon: '🧹', 
-      products: ['Cleaning Supplies', 'Paper Towels', 'Detergent', 'Soap', 'Tissues', 'Bleach'], 
-      color: 'bg-pink-50',
-      description: 'Household essentials',
-      shelfNumber: 10
     },
     { 
       name: 'Checkout Counter', 
@@ -145,9 +53,17 @@ export default function NavigationPage() {
   }, []);
 
   const storeSections: StoreSection[] = useMemo(() => {
+    console.log('Navigation: Building store sections from Firestore:', fireSections.length, 'sections');
+    
+    // Start with only essential defaults (Cashier and Checkout)
+    const essentialSections = defaultSections.slice(); // Copy essential sections
+    
+    // Override essentials if they exist in Firestore
     const persistedByName = new Map(fireSections.map((s: any) => [s.name, s]));
+    
     const merged = [
-      ...defaultSections.map(sec => {
+      // Essential sections (potentially overridden by Firestore)
+      ...essentialSections.map(sec => {
         const p: any = persistedByName.get(sec.name);
         if (!p) return sec;
         return {
@@ -157,27 +73,37 @@ export default function NavigationPage() {
           shelfNumber: typeof p.shelfNumber === 'number' ? p.shelfNumber : sec.shelfNumber,
         } as StoreSection;
       }),
+      // All Firestore sections (except essentials which are already handled above)
       ...fireSections
         .filter((p: any) => !defaultSections.some(d => d.name === p.name))
         .map((p: any) => ({
           name: p.name,
-          position: p.x != null && p.y != null ? { x: p.x, y: p.y } : { x: 0, y: 0 },
+          position: p.x != null && p.y != null ? { x: p.x, y: p.y } : { x: 1, y: 1 },
           icon: p.icon ?? '📦',
           products: [],
-          color: 'bg-gray-50',
-          description: 'Custom section',
-          shelfNumber: p.shelfNumber ?? 0,
+          color: 'bg-blue-50',
+          description: p.description || 'Store section',
+          shelfNumber: p.shelfNumber ?? 1,
         }) as StoreSection)
     ];
+    
+    console.log('Navigation: Final store sections:', merged.length, 'sections');
     return merged;
   }, [fireSections, defaultSections]);
 
   // Always start from Cashier Counter (index 0)
   const cashierSection = storeSections[0];
   const [selectedStart] = useState<StoreSection>(cashierSection);
-  const [selectedDestination, setSelectedDestination] = useState<StoreSection>(storeSections[11]); // Checkout
+  const checkoutDefault = useMemo(() => storeSections.find(s => s.name === 'Checkout Counter') || storeSections[storeSections.length - 1], [storeSections]);
+  const [selectedDestination, setSelectedDestination] = useState<StoreSection>(checkoutDefault); // Checkout as default
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [navigationPath, setNavigationPath] = useState<NavigationPath | null>(null);
+  
+  // Keep selectedDestination in sync when storeSections change (e.g., after Firestore overlay)
+  useEffect(() => {
+    const checkout = storeSections.find(s => s.name === 'Checkout Counter') || storeSections[storeSections.length - 1];
+    setSelectedDestination((prev) => prev && storeSections.find(s => s.name === prev.name) ? prev : checkout);
+  }, [storeSections]);
   
   const handleFindPath = () => {
     // Always compute from cashier
@@ -188,14 +114,21 @@ export default function NavigationPage() {
   const handleProductSearch = (productName: string) => {
     setSearchQuery(productName);
     
-    // Find which section has this product
-    const section = storeSections.find(s => 
-      s.products.some(p => p.toLowerCase().includes(productName.toLowerCase()))
-    );
+    // Prefer Firestore mapping: find product and navigate to its section
+    const product = fireProducts.find((p: any) => (p.name || '').toLowerCase() === productName.toLowerCase());
+    let targetSection: StoreSection | undefined;
+    if (product && product.section) {
+      targetSection = storeSections.find(s => s.name.toLowerCase() === String(product.section).toLowerCase());
+    }
     
-    if (section) {
-      setSelectedDestination(section);
-      const path = navigator.findOptimalPath(cashierSection.position, section.position);
+    // Fallback: search within default section product lists
+    if (!targetSection) {
+      targetSection = storeSections.find(s => s.products.some(p => p.toLowerCase().includes(productName.toLowerCase())));
+    }
+    
+    if (targetSection) {
+      setSelectedDestination(targetSection);
+      const path = navigator.findOptimalPath(cashierSection.position, targetSection.position);
       setNavigationPath(path);
     }
   };
@@ -209,7 +142,9 @@ export default function NavigationPage() {
   const handleClearPath = () => {
     setNavigationPath(null);
     setSearchQuery('');
-    setSelectedDestination(storeSections[11]); // Reset to checkout
+    // Reset to checkout counter
+    const checkout = storeSections.find(s => s.name === 'Checkout Counter') || storeSections[storeSections.length - 1];
+    setSelectedDestination(checkout);
   };
 
   const getSectionAt = (x: number, y: number): StoreSection | undefined => {
@@ -247,11 +182,25 @@ export default function NavigationPage() {
       .filter(s => s !== undefined) as StoreSection[];
   };
 
-  // Get all products for search suggestions
+  // Group Firestore products by their section for real-time availability
+  const productsBySection = useMemo(() => {
+    const map = new Map<string, string[]>();
+    fireProducts.forEach((p: any) => {
+      const sectionName = (p.section || '').toString();
+      if (!sectionName) return;
+      const list = map.get(sectionName) || [];
+      if (p.name && !list.includes(p.name)) list.push(p.name);
+      map.set(sectionName, list);
+    });
+    return map;
+  }, [fireProducts]);
+
+  // Get all products for search suggestions (prefer Firestore names)
   const allProducts = useMemo(() => {
-    // Prefer Firestore product names if available
     if (fireProducts.length > 0) {
-      return fireProducts.map((p: any) => p.name as string);
+      const names = fireProducts.map((p: any) => p.name as string).filter(Boolean);
+      // Deduplicate while preserving order
+      return Array.from(new Set(names));
     }
     return storeSections.flatMap(s => s.products);
   }, [fireProducts, storeSections]);
@@ -260,7 +209,7 @@ export default function NavigationPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">�‍💼 Staff Product Locator</h1>
+        <h1 className="text-3xl font-bold mb-2">🧑‍💼 Staff Product Locator</h1>
         <p className="text-purple-100">
           Help customers find products quickly - Search and get shelf numbers instantly
         </p>
@@ -449,18 +398,25 @@ export default function NavigationPage() {
           {/* Available Products in This Section */}
           <div>
             <h3 className="font-semibold text-gray-900 mb-3 text-lg">Products Available in {selectedDestination.name}:</h3>
-            {selectedDestination.products.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {selectedDestination.products.map((product, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="text-xl">{selectedDestination.icon}</span>
-                    <span className="text-sm font-medium text-gray-800">{product}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600 italic">This is a service counter - no products available.</p>
-            )}
+            {(() => {
+              // Service counters don't show products
+              if (selectedDestination.name === 'Cashier Counter' || selectedDestination.name === 'Checkout Counter') {
+                return <p className="text-gray-600 italic">This is a service counter - no products available.</p>;
+              }
+              const list = productsBySection.get(selectedDestination.name) || selectedDestination.products || [];
+              return list.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {list.map((product: string, index: number) => (
+                    <div key={index} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <span className="text-xl">{selectedDestination.icon}</span>
+                      <span className="text-sm font-medium text-gray-800">{product}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600 italic">No products found for this section.</p>
+              );
+            })()}
           </div>
         </div>
       )}

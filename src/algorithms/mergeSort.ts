@@ -113,8 +113,12 @@ export class MergeSort {
       let rightIndex = 0;
       
       while (leftIndex < left.length && rightIndex < right.length) {
-        const leftTime = left[leftIndex].expiryDate.getTime();
-        const rightTime = right[rightIndex].expiryDate.getTime();
+        const leftTime = left[leftIndex].expiryDate 
+          ? left[leftIndex].expiryDate!.getTime() 
+          : (ascending ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
+        const rightTime = right[rightIndex].expiryDate 
+          ? right[rightIndex].expiryDate!.getTime() 
+          : (ascending ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY);
         
         const comparison = ascending 
           ? leftTime <= rightTime

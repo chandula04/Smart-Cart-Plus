@@ -92,3 +92,16 @@ export interface TrafficData {
   congestionLevel: number; // Calculated: currentPeople / maxCapacity
   lastUpdated: Date;  // Changed from timestamp to lastUpdated for clarity
 }
+
+export interface RemovalLog {
+  id?: string;
+  productId: string;
+  name: string;
+  category?: string;
+  section?: string;
+  price: number;
+  quantity: number;
+  expiryDate?: Date;
+  removedAt: Date;
+  reason: string;
+}

@@ -11,6 +11,7 @@ import { ProductRecommendationSystem } from '@/algorithms/productRecommendation'
 // Types
 import { Product, Position, NavigationPath, ExpiryAlert, Recommendation } from '@/types';
 import { observeProducts, updateProduct } from '@/lib/db';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 
 export default function HomePage() {
@@ -28,26 +29,50 @@ export default function HomePage() {
   const [navigator] = useState(() => new RushHourNavigator());
   const [expirySystem] = useState(() => new SmartExpiryAlert());
   const [recommendationSystem] = useState(() => new ProductRecommendationSystem());
+  const { uid } = useAuth();
   
   // Live data from Firestore: products, expiry alerts, basic recommendations
   useEffect(() => {
+    // If your Firestore read rules require auth, wait for anonymous auth
+    if (!uid) return;
     const unsub = observeProducts((items) => {
       // Normalize expiryDate if it's a Firestore Timestamp
       const normalized = items.map((p) => {
         const exp: any = (p as any).expiryDate;
-        return {
+        const normalizedProduct = {
           ...p,
           expiryDate: exp && typeof exp.toDate === 'function' ? exp.toDate() : exp,
         } as Product;
+        
+        if (!normalizedProduct.id) {
+          console.error('Home: Product without ID found:', normalizedProduct);
+        }
+        
+        return normalizedProduct;
       });
+      
       setProducts(normalized);
 
       // Rebuild expiry system from unhandled products
       expirySystem.clear();
-      normalized
-        .filter(p => !p.expiryHandled)
-        .forEach(p => expirySystem.addProduct(p));
-      setExpiryAlerts(expirySystem.getTopExpiringProducts(5));
+      const unhandledProducts = normalized.filter(p => !p.expiryHandled);
+      
+      unhandledProducts.forEach(p => {
+        if (p.id) {
+          expirySystem.addProduct(p);
+        } else {
+          console.error('Home: Trying to add product without ID to expiry system:', p);
+        }
+      });
+      
+      const alerts = expirySystem
+        .getTopExpiringProducts(20)
+        .filter(a => a.daysUntilExpiry <= 5)
+        .map(a => ({
+          ...a,
+          priority: a.daysUntilExpiry <= 2 ? 1 : 2,
+        }));
+      setExpiryAlerts(alerts);
 
       // Simple real-data recommendations: most stocked items
       const top = [...normalized]
@@ -62,7 +87,7 @@ export default function HomePage() {
       setRecommendations(top);
     });
     return () => unsub();
-  }, [expirySystem]);
+  }, [expirySystem, uid]);
   
   // Search functionality using Binary Search
   const handleSearch = (term: string) => {
@@ -105,15 +130,35 @@ export default function HomePage() {
   
   // Update expiry alerts
   const updateExpiryAlerts = () => {
-    const alerts = expirySystem.getTopExpiringProducts(5);
+    const alerts = expirySystem
+      .getTopExpiringProducts(20)
+      .filter(a => a.daysUntilExpiry <= 5)
+      .map(a => ({
+        ...a,
+        priority: a.daysUntilExpiry <= 2 ? 1 : 2,
+      }));
     setExpiryAlerts(alerts);
   };
 
   // Mark an expiry alert as handled
   const handleMarkAsHandled = async (productId: string) => {
-    await updateProduct(productId, { expiryHandled: true });
-    expirySystem.removeProduct(productId);
-    updateExpiryAlerts();
+    if (!productId) {
+      console.error('Home: handleMarkAsHandled called with empty productId');
+      alert('Error: Product ID is missing');
+      return;
+    }
+    
+    try {
+      await updateProduct(productId, { expiryHandled: true });
+      
+      expirySystem.removeProduct(productId);
+      updateExpiryAlerts();
+      
+      alert('Product marked as handled successfully!');
+    } catch (error) {
+      console.error('Home: Error marking product as handled:', error);
+      alert(`Failed to mark product as handled: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
   
   // Update recommendations

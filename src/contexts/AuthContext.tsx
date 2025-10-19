@@ -15,10 +15,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    let unsub = onAuthStateChanged(auth, (u: User | null) => setUser(u));
-    if (!auth.currentUser) {
-      signInAnonymously(auth).catch(() => {/* ignore */});
-    }
+    let unsub = onAuthStateChanged(auth, (u: User | null) => {
+      setUser(u);
+    });
+    
+    // Always try to sign in anonymously when component mounts
+    const initAuth = async () => {
+      try {
+        if (!auth.currentUser) {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        // Retry after a delay
+        setTimeout(() => {
+          signInAnonymously(auth).catch(() => {});
+        }, 2000);
+      }
+    };
+    
+    initAuth();
+    
     return () => unsub();
   }, []);
 

@@ -24,7 +24,10 @@ export class SmartExpiryAlert {
    * @param product - Product to monitor
    */
   addProduct(product: Product): void {
-    const daysUntilExpiry = this.calculateDaysUntilExpiry(product.expiryDate);
+    // If no expiryDate, treat as very low priority (far in future)
+    const daysUntilExpiry = product.expiryDate 
+      ? this.calculateDaysUntilExpiry(product.expiryDate)
+      : Number.MAX_SAFE_INTEGER;
     const node: HeapNode = {
       product,
       priority: daysUntilExpiry
@@ -254,11 +257,8 @@ export class SmartExpiryAlert {
    * @returns Priority level (1-5, where 1 is most urgent)
    */
   private calculatePriorityLevel(days: number): number {
-    if (days < 0) return 1; // Expired
-    if (days <= 1) return 1; // Critical
-    if (days <= 3) return 2; // High
-    if (days <= 7) return 3; // Medium
-    if (days <= 14) return 4; // Low
-    return 5; // Very Low
+    if (days <= 2) return 1; // Critical (includes expired and up to 2 days)
+    if (days <= 5) return 2; // High (3-5 days)
+    return 3; // Others: not shown in UI per requirement, keep as lower priority
   }
 }
