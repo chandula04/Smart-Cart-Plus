@@ -19,54 +19,64 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const cartRef = useRef<CartItem[]>([]);
   const { uid } = useAuth();
   const anonCartRef = useRef<CartItem[]>([]);
   const migratedRef = useRef(false);
-
-  // Sync cart from Firestore when signed in
-  useEffect(() => {
-    if (!uid) {
-      setCart([]); // Clear local cart when no user
-      migratedRef.current = false;
-      return;
-    }
-    const unsub = observeCart(uid, (items) => {
-      setCart(items);
-    });
-    return () => {
-      unsub();
-    };
-  }, [uid]);
+  const getDaysUntilExpiry = (d?: Date) => {
+    if (!d) return Infinity;
+    const now = new Date();
+    return Math.ceil((d.getTime() - now.getTime()) / (1000 * 3600 * 24));
+  };
 
   // Track anonymous cart while not signed in
   useEffect(() => {
+    cartRef.current = cart;
     if (!uid) {
       anonCartRef.current = cart;
     }
   }, [cart, uid]);
 
-  // Migrate anonymous cart to Firestore once when uid becomes available
+  // When uid becomes available, migrate anon cart first, then subscribe to Firestore
   useEffect(() => {
-    const migrate = async () => {
-      if (!uid) return;
-      if (migratedRef.current) return;
-      const items = anonCartRef.current || [];
-      if (!items.length) {
-        migratedRef.current = true;
+    let unsub: undefined | (() => void);
+    let cancelled = false;
+    const run = async () => {
+      if (!uid) {
+        // Keep local (anon) cart intact
+        migratedRef.current = false;
         return;
       }
-      try {
-        for (const it of items) {
-          await setCartItem(uid, it);
+
+      // Migrate anon cart before subscribing to avoid initial empty snapshot overriding local state
+      if (!migratedRef.current && (anonCartRef.current?.length || 0) > 0) {
+        try {
+          for (const it of anonCartRef.current) {
+            await setCartItem(uid, it);
+          }
+        } catch (err) {
+          console.error('Failed to migrate anonymous cart to Firestore:', err);
+          // Keep optimistic local cart; subscription may still attach
+        } finally {
+          migratedRef.current = true;
+          anonCartRef.current = [];
         }
-      } catch (err) {
-        console.error('Failed to migrate anonymous cart to Firestore:', err);
-      } finally {
-        migratedRef.current = true;
-        anonCartRef.current = [];
       }
+
+      if (cancelled) return;
+      unsub = observeCart(uid, (items) => {
+        // If Firestore returns empty but we have local optimistic items, keep local
+        if (items.length === 0 && cartRef.current.length > 0) {
+          return;
+        }
+        setCart(items);
+      });
     };
-    migrate();
+    run();
+    return () => {
+      cancelled = true;
+      if (unsub) unsub();
+    };
   }, [uid]);
 
   const addToCart = async (product: Product) => {
@@ -74,80 +84,97 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!product || !product.id) {
       return;
     }
+    // Block adding expired products
+    const daysLeft = getDaysUntilExpiry(product.expiryDate);
+    if (isFinite(daysLeft) && daysLeft <= 0) {
+      alert('This product is expired and cannot be added to the cart.');
+      return;
+    }
+    // Enforce stock limits
+    const current = cart.find(c => c.product.id === product.id);
+    const currentQty = current ? current.quantity : 0;
+    const maxStock = product.quantity ?? Infinity;
+    if (currentQty >= maxStock) {
+      alert(`Only ${maxStock} in stock. You already have the maximum quantity in your cart.`);
+      return;
+    }
     // Optimistic local update for instant UI feedback
-    let rollback: CartItem[] | null = null;
     setCart(prevCart => {
-      rollback = prevCart;
       const existingItem = prevCart.find(item => item.product.id === product.id);
       if (existingItem) {
         return prevCart.map(item =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: Math.min(item.quantity + 1, maxStock) }
             : item
         );
       }
-      return [...prevCart, { product, quantity: 1 }];
+      return [...prevCart, { product, quantity: Math.min(1, maxStock) }];
     });
 
     if (uid) {
       try {
         const existing = cart.find(c => c.product.id === product.id);
-        const nextQty = existing ? existing.quantity + 1 : 1;
+        const nextQty = Math.min((existing ? existing.quantity + 1 : 1), maxStock);
         await setCartItem(uid, { product, quantity: nextQty });
       } catch (err) {
         console.error('Failed to set cart item in Firestore:', err);
-        // Rollback optimistic change on failure
-        if (rollback) setCart(rollback);
+        // Keep optimistic state so the user sees the item in the cart; it will sync later
+        // Optional: surface a gentle message
+        // alert('Added to cart (offline). We\'ll sync when connected.');
       }
     }
   };
 
   const removeFromCart = async (productId: string) => {
+    // Optimistic local removal
+    setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
     if (uid) {
       try {
         await removeCartItem(uid, productId);
       } catch (err) {
         console.error('Failed to remove from Firestore:', err);
       }
-    } else {
-      setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
     }
   };
 
   const updateQuantity = async (productId: string, quantity: number) => {
+    const existing = cart.find(c => c.product.id === productId);
+    if (!existing) return;
+    const maxStock = existing.product.quantity ?? Infinity;
     if (quantity <= 0) {
       await removeFromCart(productId);
       return;
     }
+    const clamped = Math.min(quantity, maxStock);
+    if (quantity > maxStock) {
+      alert(`Only ${maxStock} in stock for ${existing.product.name}.`);
+    }
+    // Optimistic local update
+    setCart(prevCart =>
+      prevCart.map(item =>
+        item.product.id === productId
+          ? { ...item, quantity: clamped }
+          : item
+      )
+    );
     if (uid) {
-      const existing = cart.find(c => c.product.id === productId);
-      if (existing) {
-        try {
-          await setCartItem(uid, { ...existing, quantity });
-        } catch (err) {
-          console.error('Failed to update cart item in Firestore:', err);
-        }
+      try {
+        await setCartItem(uid, { ...existing, quantity: clamped });
+      } catch (err) {
+        console.error('Failed to update cart item in Firestore:', err);
       }
-    } else {
-      setCart(prevCart =>
-        prevCart.map(item =>
-          item.product.id === productId
-            ? { ...item, quantity }
-            : item
-        )
-      );
     }
   };
 
   const clearCart = async () => {
+    // Optimistic local clear
+    setCart([]);
     if (uid) {
       try {
         await clearCartItems(uid);
       } catch (err) {
         console.error('Failed to clear cart items in Firestore:', err);
       }
-    } else {
-      setCart([]);
     }
   };
 
