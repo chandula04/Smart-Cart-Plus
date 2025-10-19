@@ -97,7 +97,7 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+  <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Product Catalog</h1>
         <p className="text-gray-600">
           Browse our complete product inventory with advanced search and sorting capabilities
@@ -105,10 +105,10 @@ export default function ProductsPage() {
       </div>
 
       {/* Filters and Controls */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+  <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
         <h2 className="text-xl font-semibold mb-4">Search & Filter</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -190,7 +190,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Product Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {filteredProducts.map(product => {
           const daysUntilExpiry = product.expiryDate ? getDaysUntilExpiry(product.expiryDate) : null;
           const expiryStatus = daysUntilExpiry !== null ? getExpiryStatus(daysUntilExpiry) : null;

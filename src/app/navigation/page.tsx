@@ -234,7 +234,7 @@ export default function NavigationPage() {
 
         {/* Product Suggestions */}
         {searchQuery && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {allProducts
               .filter(p => p.toLowerCase().includes(searchQuery.toLowerCase()))
               .slice(0, 12)
@@ -260,7 +260,7 @@ export default function NavigationPage() {
             <label className="block text-sm font-medium text-gray-700 mb-3">
               🎯 I want to go to:
             </label>
-            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
               {storeSections
                 .filter(s => s.name !== 'Cashier Counter' && s.name !== 'Checkout Counter')
                 .map((section) => (
@@ -284,7 +284,7 @@ export default function NavigationPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 mt-6">
+  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
           <button
             onClick={handleFindPath}
             className="flex-1 bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 font-semibold text-lg transition-colors shadow-md hover:shadow-lg"
@@ -332,15 +332,15 @@ export default function NavigationPage() {
                   return (
                     <div
                       key={`${x}-${y}`}
-                      className={`w-32 h-32 border-2 ${getCellStyle(section)} transition-all cursor-pointer flex flex-col items-center justify-center text-center p-3 m-1 rounded-lg`}
+                      className={`w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 border-2 ${getCellStyle(section)} transition-all cursor-pointer flex flex-col items-center justify-center text-center p-2 sm:p-3 m-1 rounded-lg`}
                       onClick={() => handleSectionSelect(section)}
                     >
-                      <div className="text-3xl mb-1">{section.icon}</div>
-                      <div className="text-xs font-bold text-gray-800 leading-tight">
+                      <div className="text-2xl sm:text-3xl mb-1">{section.icon}</div>
+                      <div className="text-[10px] sm:text-xs font-bold text-gray-800 leading-tight">
                         {section.name}
                       </div>
                       {section.shelfNumber > 0 && (
-                        <div className="mt-1 text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
+                        <div className="mt-1 text-[10px] sm:text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
                           Shelf #{section.shelfNumber}
                         </div>
                       )}

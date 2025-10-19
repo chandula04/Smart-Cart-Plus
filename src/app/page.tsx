@@ -172,8 +172,8 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+      <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
           Welcome to the Shopping System
         </h1>
         <p className="text-lg text-gray-600 mb-6">
@@ -181,7 +181,7 @@ export default function HomePage() {
         </p>
         
         {/* Features */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
             <h3 className="font-semibold text-blue-900">Fast Search</h3>
             <p className="text-blue-700 text-sm">Quick product lookup</p>

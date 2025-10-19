@@ -280,7 +280,7 @@ export default function StaffDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+  <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Staff Dashboard</h1>
@@ -350,7 +350,7 @@ export default function StaffDashboard() {
       {activeTab === 'expiry' && (
         <div className="space-y-6">
           {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-red-100 text-red-600">
@@ -417,7 +417,7 @@ export default function StaffDashboard() {
           </div>
 
           {/* Urgent Alerts (High/Critical only, <= 5 days) */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">🚨 Urgent Actions Required</h2>
               <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -470,7 +470,7 @@ export default function StaffDashboard() {
           </div>
 
           {/* All Expiry Alerts Table (only High/Critical, i.e., <= 5 days) */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">📋 Complete Expiry Monitor</h2>
               <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -550,7 +550,7 @@ export default function StaffDashboard() {
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Add New Product</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
                 <input
@@ -635,7 +635,7 @@ export default function StaffDashboard() {
             </button>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Current Products ({products.length})</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -713,7 +713,7 @@ export default function StaffDashboard() {
 
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Add New Section</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Section Name *</label>
                 <input
@@ -799,7 +799,7 @@ export default function StaffDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Current Store Layout ({sections.length} sections)</h2>
             <p className="text-gray-600 mb-4">This is how your store sections are arranged:</p>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {sections.sort((a, b) => (a.y || 0) * 10 + (a.x || 0) - (b.y || 0) * 10 - (b.x || 0)).map(section => (
                 <div key={section.id} className="border-2 border-blue-200 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
                   <div className="text-4xl mb-2">{section.icon || '📦'}</div>
@@ -822,7 +822,7 @@ export default function StaffDashboard() {
       {/* Removal Logs Tab */}
       {activeTab === 'logs' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Removed Products Log</h2>
             {removalLogs.length === 0 ? (
               <p className="text-gray-600">No removals recorded yet.</p>
