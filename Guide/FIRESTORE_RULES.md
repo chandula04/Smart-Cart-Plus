@@ -29,6 +29,8 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
 
+    // Traffic collection removed
+
     // Carts collection with proper subcollection access
     match /carts/{userId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;

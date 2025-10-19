@@ -20,8 +20,8 @@ SmartCart Plus is a comprehensive shopping system that solves modern-day shoppin
 
 #### 3. **Rush Hour Navigator** (Enhanced Dijkstra's Algorithm)
 - **Time Complexity**: O((V + E) log V)
-- **Innovation**: Dynamic edge weights based on real-time aisle congestion
-- **Features**: Crowd-avoiding pathfinding, alternative route suggestions
+- **Innovation**: Optimal pathfinding within store layout
+- **Features**: Path from entrance to destination
 
 #### 4. **Smart Expiry Alert System** (Min-Heap)
 - **Time Complexity**: Insert/Extract O(log n)
@@ -67,7 +67,7 @@ SmartCart Plus is a comprehensive shopping system that solves modern-day shoppin
 | BFS | O(V + E) | O(V) | Recommendations |
 # Smart Cart Plus
 
-This repository is a Next.js (App Router) + TypeScript app with Tailwind CSS. It integrates Firebase for real-time data (Auth + Firestore) to manage products, store sections, traffic, carts, and expiry alerts.
+This repository is a Next.js (App Router) + TypeScript app with Tailwind CSS. It integrates Firebase for real-time data (Auth + Firestore) to manage products, store sections, carts, and expiry alerts.
 
 ## Prerequisites
 - Node.js 18+
@@ -90,118 +90,201 @@ This repository is a Next.js (App Router) + TypeScript app with Tailwind CSS. It
       apiKey: "...",
       authDomain: "...",
       projectId: "...",
-      storageBucket: "...",
-      messagingSenderId: "...",
-      appId: "...",
-   };
-   ```
-- Copy those values.
+      # SmartCart Plus
 
-3) Enable Authentication (Anonymous)
-- In the Firebase console, go to Build > Authentication.
-- Click Get started.
-- Go to the Sign-in method tab, click Add new provider, choose Anonymous, enable it, and Save.
+      A Next.js + TypeScript app with Tailwind CSS and Firebase that demonstrates practical data structures and algorithms in a modern shopping workflow. It includes real-time inventory via Firestore, anonymous auth, expiry alerts, and a robust cart synced to the user.
 
-4) Enable Cloud Firestore
-- Go to Build > Firestore Database.
-- Click Create database.
-- Start in Test mode (for development), choose the default location, and click Enable.
+      ## Features
 
-5) Configure environment variables
-- In this repo, copy `.env.local.example` to `.env.local`.
-- Paste your keys from the firebaseConfig into these variables:
-   - NEXT_PUBLIC_FIREBASE_API_KEY
-   - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-   - NEXT_PUBLIC_FIREBASE_PROJECT_ID
-   - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-   - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-   - NEXT_PUBLIC_FIREBASE_APP_ID
+      - Products
+         - Live product catalog from Firestore
+         - Search by name and price range (Binary Search)
+         - Sort by name, price, or expiry date (Merge Sort)
+         - Per-product stock and optional expiry dates
 
-These keys are used by `src/lib/firebase.ts` at runtime.
+      - Cart
+         - Anonymous cart with automatic migration once uid is available
+         - Optimistic add/remove/update for snappy UX, then sync to Firestore
+         - Enforces stock limits and blocks expired items
+         - Clear cart after checkout flow
 
-6) Install dependencies
-If not already installed:
+      - Expiry Alerts (Staff + Home)
+         - Min-Heap powered priority queue (SmartExpiryAlert)
+         - Only items with daysUntilExpiry <= 5 are shown
+         - Priority mapping: Critical (<= 2 days), High (3–5 days)
+         - Day rounding: floor positive durations so 5.x shows as 5
 
-```cmd
-npm install
-```
+      - Sections (Staff)
+         - Add new sections (grid 4x3 positions) with optional emoji and shelf number
+         - Live shelf availability (1–10) to avoid duplicates; 0 for counters
+         - “Mark Handled” deletes products and writes a removal log
 
-7) Run the app in development
-```cmd
-npm run dev
-```
-Open http://localhost:3000 in your browser.
+      - Algorithms included
+         - Binary Search: search by name/price
+         - Merge Sort: sorting utility
+         - Smart Expiry Alert: min-heap
+         - Rush Hour Navigator: enhanced Dijkstra (used locally; no traffic data)
 
-## Firestore data model (collections)
-The app expects the following collections (created automatically on first write):
-- `products` (documents: Product)
-- `sections` (documents: StoreSection)
-- `traffic` (documents keyed by sectionId)
-- `carts/{uid}/items` (documents: CartItem)
+      ## Tech Stack
 
-Product document (example):
-```json
-{
-   "name": "Organic Milk",
-   "price": 450,
-   "category": "Dairy",
-   "section": "Dairy & Eggs",
-   "expiryDate": { "_seconds": 1739923200, "_nanoseconds": 0 },
-   "description": "Fresh organic whole milk",
-   "inStock": true,
-   "quantity": 25,
-   "expiryHandled": false,
-   "createdAt": { "_seconds": 1739923200, "_nanoseconds": 0 }
-}
-```
+      - Next.js (App Router) + React 18 + TypeScript
+      - Tailwind CSS
+      - Firebase (Auth: Anonymous, Firestore)
 
-Section document (example):
-```json
-{
-   "name": "Dairy & Eggs",
-   "x": 1,
-   "y": 0,
-   "icon": "🥛",
-   "shelfNumber": 1,
-   "createdAt": { "_seconds": 1739923200, "_nanoseconds": 0 }
-}
-```
+      ## Getting Started
 
-Traffic document (keyed by sectionId, created when you add a section):
-```json
-{
-   "sectionId": "<sections doc id>",
-   "sectionName": "Dairy & Eggs",
-   "currentPeople": 0,
-   "maxCapacity": 25,
-   "congestionLevel": 0,
-   "lastUpdated": { "_seconds": 1739923200, "_nanoseconds": 0 }
-}
-```
+      1) Install dependencies
 
-Cart item document (under `carts/{uid}/items/{productId}`):
-```json
-{
-   "product": { "id": "...", "name": "...", "price": 450, ... },
-   "quantity": 1
-}
-```
+      ```cmd
+      npm install
+      ```
 
-## Where Firebase is used in the code
-- `src/lib/firebase.ts`: Initializes Firebase app (Auth + Firestore) from env vars
-- `src/lib/db.ts`: Firestore helper functions (observeProducts/sections/traffic, add/update, carts)
-- `src/contexts/AuthContext.tsx`: Anonymous sign-in on app load
-- `src/contexts/CartContext.tsx`: Cart synced with Firestore for logged-in user
-- `src/app/staff/page.tsx`: Live products/sections/traffic; add product/section; update traffic; expiry alerts
-- `src/app/products/page.tsx`: Product listing from Firestore
-- `src/app/page.tsx`: Home: search, suggestions, expiry alerts from Firestore; mark handled writes to Firestore
-- `src/app/navigation/page.tsx`: Staff navigation: sections from Firestore; suggestions from Firestore products
+      2) Environment variables
 
-## Optional: Seed sample data
-You can add products/sections from the Staff page to quickly populate Firestore. If you want a script-based seeder, tell me and I’ll add one.
+      Create `.env.local` and set the following (from your Firebase web app config):
 
-## Troubleshooting
-- If you see Missing or insufficient permissions, you may need to relax dev security rules.
-- Ensure Anonymous auth is enabled.
-- Ensure `.env.local` exists and values are correct. Restart dev server after changing env vars.
-- Timestamps: You can use the Firestore Console date picker; code normalizes Timestamp to JS Date.
+      - NEXT_PUBLIC_FIREBASE_API_KEY
+      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+      - NEXT_PUBLIC_FIREBASE_APP_ID
+
+      These are used by `src/lib/firebase.ts`.
+
+      3) Enable Firebase services
+
+      - Authentication → enable Anonymous provider
+      - Firestore Database → create database
+
+      4) Start the app
+
+      ```cmd
+      npm run dev
+      ```
+
+      Open http://localhost:3000
+
+      ## Firestore Security Rules
+
+      Use rules similar to the following during development. Adjust for production as needed.
+
+      ```javascript
+      rules_version = '2';
+      service cloud.firestore {
+         match /databases/{database}/documents {
+            function isSignedIn() { return request.auth != null; }
+
+            match /products/{id} {
+               allow read: if true;
+               allow write: if isSignedIn();
+            }
+
+            match /sections/{id} {
+               allow read: if true;
+               allow write: if isSignedIn();
+            }
+
+            match /removalLogs/{id} {
+               allow read: if true;
+               allow write: if isSignedIn();
+            }
+
+            match /carts/{userId} {
+               allow read, write: if isSignedIn() && request.auth.uid == userId;
+               match /items/{itemId} {
+                  allow read, write: if isSignedIn() && request.auth.uid == userId;
+               }
+            }
+         }
+      }
+      ```
+
+      ## Data Model
+
+      - products (collection)
+         - name: string
+         - price: number
+         - category: string
+         - section: string
+         - expiryDate: Timestamp | string | number (normalized to Date in code)
+         - description?: string
+         - inStock: boolean
+         - quantity: number
+         - expiryHandled?: boolean
+         - createdAt: Timestamp
+
+      - sections (collection)
+         - name: string
+         - x: number
+         - y: number
+         - icon: string
+         - shelfNumber?: number
+         - createdAt: Timestamp
+
+      - removalLogs (collection)
+         - productId: string
+         - name: string
+         - category?: string
+         - section?: string
+         - price: number
+         - quantity: number
+         - expiryDate?: Timestamp
+         - removedAt: Timestamp
+         - reason: string
+
+      - carts/{uid}/items (subcollection)
+         - product: Product snapshot
+         - quantity: number
+
+      ## Project Structure
+
+      - src/
+         - algorithms/
+            - binarySearch.ts
+            - mergeSort.ts
+            - productRecommendation.ts
+            - rushHourNavigator.ts
+            - smartExpiryAlert.ts
+         - app/
+            - page.tsx (Home: search, recommendations, expiry alerts)
+            - products/page.tsx (Catalog + add to cart)
+            - staff/page.tsx (Staff dashboard: sections, expiry, products, logs)
+            - globals.css, layout.tsx
+         - contexts/
+            - AuthContext.tsx (anonymous sign-in)
+            - CartContext.tsx (optimistic cart + Firestore sync)
+         - lib/
+            - firebase.ts (Firebase init)
+            - db.ts (Firestore CRUD and observers)
+         - types/
+            - index.ts (shared types)
+
+      ## NPM Scripts
+
+      - dev: Start dev server
+      - build: Production build
+      - start: Start production server
+      - lint: Run Next.js ESLint
+
+      ## Troubleshooting
+
+      - Missing or insufficient permissions
+         - Ensure Anonymous auth is enabled
+         - Apply the security rules above
+
+      - Products not visible
+         - Check Firestore data; verify you’re signed in anonymously (uid present)
+         - Ensure `expiryDate` fields are valid (code normalizes different shapes)
+
+      - Cart not syncing
+         - Writes occur only when uid is present; local optimistic updates still show
+         - Verify `carts/{uid}/items` rules and that the doc paths match
+
+      - Expiry alerts
+         - Only items with daysUntilExpiry <= 5 are shown
+         - Critical: <= 2 days; High: 3–5 days
+
+      ## License
+
+      This project is for educational purposes. Add your preferred license if needed.

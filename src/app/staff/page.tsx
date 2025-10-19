@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { SmartExpiryAlert } from '@/algorithms/smartExpiryAlert';
-import { Product, ExpiryAlert, StoreSection, TrafficData, RemovalLog } from '@/types';
-import { observeProducts, addProduct as addProductDb, observeSections, addSection as addSectionDb, addTrafficRecord, updateProduct as updateProductDb, deleteProduct as deleteProductDb, addRemovalLog, observeRemovalLogs } from '@/lib/db';
+import { Product, ExpiryAlert, StoreSection, RemovalLog } from '@/types';
+import { observeProducts, addProduct as addProductDb, observeSections, addSection as addSectionDb, updateProduct as updateProductDb, deleteProduct as deleteProductDb, addRemovalLog, observeRemovalLogs } from '@/lib/db';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function StaffDashboard() {
@@ -34,6 +34,17 @@ export default function StaffDashboard() {
     icon: '',
     shelfNumber: '' as string | number
   });
+  
+  // Shelf availability helpers (1-10 are shelves; 0 is special counters)
+  const usedShelfNumbers = new Set(
+    sections
+      .filter(s => typeof s.shelfNumber !== 'undefined' && (s.shelfNumber as number) > 0)
+      .map(s => Number(s.shelfNumber))
+  );
+  const allShelves = Array.from({ length: 10 }, (_, i) => i + 1);
+  const availableShelves = allShelves.filter(n => !usedShelfNumbers.has(n));
+  const enteredShelf = Number(newSection.shelfNumber || 0);
+  const shelfTaken = enteredShelf > 0 && usedShelfNumbers.has(enteredShelf);
   
   // Removal Logs State
   const [removalLogs, setRemovalLogs] = useState<RemovalLog[]>([]);
@@ -126,6 +137,16 @@ export default function StaffDashboard() {
       return;
     }
 
+    const shelfNum = Number(newSection.shelfNumber) || 0;
+    if (shelfNum < 0 || shelfNum > 10) {
+      alert('Shelf number must be between 1 and 10 for shelves or 0 for counters.');
+      return;
+    }
+    if (shelfNum > 0 && usedShelfNumbers.has(shelfNum)) {
+      alert(`Shelf #${shelfNum} is already in use. Available shelves: ${availableShelves.join(', ') || 'none'}`);
+      return;
+    }
+
     // Convert position preset to x,y coordinates
     const positionMap: { [key: string]: { x: number; y: number } } = {
       'top-left': { x: 0, y: 0 },
@@ -152,8 +173,7 @@ export default function StaffDashboard() {
       icon: newSection.icon || '📦',
       shelfNumber: newSection.shelfNumber ? Number(newSection.shelfNumber) : 0
     };
-    const ref = await addSectionDb(section as Omit<StoreSection, 'id'>);
-    await addTrafficRecord(ref.id, section.name);
+    await addSectionDb(section as Omit<StoreSection, 'id'>);
 
     // Reset form
     setNewSection({
@@ -166,7 +186,7 @@ export default function StaffDashboard() {
     alert('Section added successfully!');
   };
 
-  // No traffic monitoring anymore
+  // Traffic monitoring removed
 
   const handleMarkAsHandled = async (product: Product) => {
     // Only show for High/Critical; confirm deletion
@@ -251,19 +271,7 @@ export default function StaffDashboard() {
     }
   };
 
-  const getCongestionColor = (level: number) => {
-    if (level >= 0.8) return 'bg-red-100 text-red-800 border-red-300';
-    if (level >= 0.6) return 'bg-orange-100 text-orange-800 border-orange-300';
-    if (level >= 0.4) return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-    return 'bg-green-100 text-green-800 border-green-300';
-  };
-
-  const getCongestionText = (level: number) => {
-    if (level >= 0.8) return 'High Traffic';
-    if (level >= 0.6) return 'Moderate';
-    if (level >= 0.4) return 'Low';
-    return 'Clear';
-  };
+  // Congestion helpers removed
 
   const getTotalValue = (alerts: ExpiryAlert[]) => {
     return alerts.reduce((sum, alert) => sum + (alert.product.price * alert.product.quantity), 0);
@@ -769,7 +777,15 @@ export default function StaffDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="0 for counters, 1-10 for shelves"
                 />
-                <p className="text-xs text-gray-500 mt-1">Use 1-10 for product shelves, or 0 for counters like Entrance/Cashier.</p>
+                <div className="text-xs mt-1">
+                  <p className="text-gray-500">Use 1-10 for product shelves, or 0 for counters like Entrance/Cashier.</p>
+                  {shelfTaken ? (
+                    <p className="mt-1 text-red-600 font-medium">Shelf #{enteredShelf} is already in use.</p>
+                  ) : (enteredShelf > 0 ? (
+                    <p className="mt-1 text-green-600 font-medium">Shelf #{enteredShelf} is available.</p>
+                  ) : null)}
+                  <p className="mt-1 text-gray-600">Available shelves: {availableShelves.length > 0 ? availableShelves.join(', ') : 'none'}</p>
+                </div>
               </div>
             </div>
             <button

@@ -5,7 +5,7 @@ console.log('Testing SmartCart Plus Algorithms...\n');
 
 // Test 1: Basic navigation
 console.log('✅ Test 1: Rush Hour Navigator');
-console.log('- Algorithm: Enhanced Dijkstra\'s with congestion weights');
+console.log('- Algorithm: Enhanced Dijkstra\'s for in-store navigation');
 console.log('- Time Complexity: O((V + E) log V)');
 console.log('- Features: Real-time pathfinding with crowd avoidance\n');
 

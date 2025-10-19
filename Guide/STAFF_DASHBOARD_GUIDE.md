@@ -1,7 +1,7 @@
 # Staff Dashboard User Guide
 
 ## Overview
-The SmartCart Plus Staff Dashboard is a comprehensive management system for store staff to manage products, store sections, monitor traffic, and track product expiry alerts.
+The SmartCart Plus Staff Dashboard is a comprehensive management system for store staff to manage products, store sections, and track product expiry alerts.
 
 ## Features
 
@@ -91,46 +91,11 @@ Optional field:
 4. Click "Add Section"
 5. New section appears in both Navigation page dropdowns
 
-**Note:** New sections automatically get added to the traffic monitoring system.
+<!-- Traffic monitoring removed -->
 
 ---
 
-### 4. 👥 Traffic Monitor Tab
-Real-time customer traffic monitoring for crowd management and smart navigation.
-
-**Features:**
-- Monitor people count in each section
-- Visual congestion level indicators
-- Color-coded traffic status:
-  - 🟢 Green (Clear): < 40% capacity
-  - 🟡 Yellow (Low): 40-60% capacity
-  - 🟠 Orange (Moderate): 60-80% capacity
-  - 🔴 Red (High Traffic): ≥ 80% capacity
-
-**How to Update Traffic:**
-1. Find the section card
-2. Use **-** button to decrease people count
-3. Use **+** button to increase people count
-4. Progress bar shows current congestion level
-5. Timestamp shows last update time
-
-**Traffic Data:**
-- Current People: Number of customers in section
-- Max Capacity: Maximum recommended capacity (default: 25)
-- Congestion Level: Calculated as currentPeople / maxCapacity
-- Auto-updates last modified timestamp
-
-**Integration with Navigation:**
-The traffic data is used by Dijkstra's pathfinding algorithm to calculate optimal routes:
-- High congestion = higher path cost
-- Algorithm prefers less crowded routes
-- Customers get recommendations to avoid busy areas
-
-**Formula:**
-```
-Congestion Level = Current People ÷ Max Capacity
-Path Weight = Base Distance × (1 + Congestion Level)
-```
+<!-- Traffic Monitor removed -->
 
 ---
 
@@ -149,21 +114,12 @@ Path Weight = Base Distance × (1 + Congestion Level)
   - Stock quantity
 - Alerts update in real-time as dates approach
 
-### Traffic-Based Routing
-- Navigation page uses traffic data for pathfinding
-- Dijkstra's algorithm considers congestion when calculating shortest path
-- Routes dynamically adjust based on current store traffic
+<!-- Traffic-based routing removed -->
 
 ---
 
 ## Data Persistence Note
-Currently, all data is stored in browser memory (client-side state). Data will reset on page refresh. 
-
-**For Production:**
-- Integrate with Firebase or similar database
-- Implement API endpoints for CRUD operations
-- Add authentication for staff access
-- Enable real-time updates across multiple devices
+Data is persisted in Firebase Firestore.
 
 ---
 
@@ -180,11 +136,9 @@ Currently, all data is stored in browser memory (client-side state). Data will r
 ## Tips for Staff
 
 - **Check Expiry Tab daily** for critical alerts
-- **Update traffic data regularly** during busy hours
 - **Add products immediately** when new inventory arrives
 - **Use consistent section names** across all entries
 - **Mark items as handled** after taking action
-- **Monitor high-traffic sections** to prevent overcrowding
 
 ---
 
@@ -198,19 +152,14 @@ Currently, all data is stored in browser memory (client-side state). Data will r
 - Verify X,Y coordinates are within grid (0-3, 0-2)
 - Check that section name is unique
 
-**Traffic data not affecting routes?**
-- Ensure traffic levels are updated (click + or -)
-- Higher congestion should show darker colors
-- Navigation system will prefer lower congestion paths
+<!-- Traffic troubleshooting removed -->
 
 ---
 
 ## Future Enhancements
 - Barcode scanning for product addition
-- Automated traffic counting with sensors
 - Push notifications for critical expiry alerts
 - Integration with Point of Sale (POS) system
-- Historical traffic pattern analysis
 - Predictive expiry management with ML
 
 ---

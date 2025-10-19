@@ -1,11 +1,10 @@
 import { db } from './firebase';
 import { collection, doc, onSnapshot, query, setDoc, updateDoc, addDoc, deleteDoc, getDocs, serverTimestamp, where, QuerySnapshot, DocumentData, DocumentReference, orderBy } from 'firebase/firestore';
-import { Product, StoreSection, TrafficData, CartItem, RemovalLog } from '@/types';
+import { Product, StoreSection, CartItem, RemovalLog } from '@/types';
 
 // Collections
 const productsCol = () => collection(db, 'products');
 const sectionsCol = () => collection(db, 'sections');
-const trafficCol = () => collection(db, 'traffic');
 const cartsCol = (uid: string) => collection(db, 'carts', uid, 'items');
 
 // Helper to normalize various Firestore date shapes to JS Date
@@ -105,30 +104,6 @@ export const observeSections = (cb: (items: StoreSection[]) => void) => {
 
 export const addSection = async (s: Omit<StoreSection, 'id'>): Promise<DocumentReference> => {
   return addDoc(sectionsCol(), { ...s, createdAt: serverTimestamp() });
-};
-
-// Traffic
-export const observeTraffic = (cb: (items: TrafficData[]) => void) => {
-  return onSnapshot(trafficCol(), (snap: QuerySnapshot<DocumentData>) => {
-    const list: TrafficData[] = [];
-    snap.forEach((docu) => list.push({ sectionId: docu.id, ...(docu.data() as any) } as TrafficData));
-    cb(list);
-  });
-};
-
-export const updateTraffic = async (sectionId: string, newData: Partial<TrafficData>) => {
-  await updateDoc(doc(db, 'traffic', sectionId), { ...newData, lastUpdated: serverTimestamp() });
-};
-
-export const addTrafficRecord = async (sectionId: string, sectionName: string) => {
-  await setDoc(doc(db, 'traffic', sectionId), {
-    sectionId,
-    sectionName,
-    currentPeople: 0,
-    maxCapacity: 25,
-    congestionLevel: 0,
-    lastUpdated: serverTimestamp(),
-  });
 };
 
 // Cart

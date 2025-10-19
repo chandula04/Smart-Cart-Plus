@@ -269,9 +269,7 @@ export default function HomePage() {
             <p className="text-sm text-gray-600">
               Estimated Time: {navigationPath.estimatedTime.toFixed(1)} minutes
             </p>
-            <p className="text-sm text-gray-600">
-              Congestion Level: {navigationPath.congestionLevel.toFixed(1)}/5
-            </p>
+            {/* Congestion Level removed with traffic feature */}
             <div className="mt-2">
               <p className="text-sm font-medium">Path:</p>
               <div className="flex gap-2 mt-1">

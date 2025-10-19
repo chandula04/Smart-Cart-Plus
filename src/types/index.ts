@@ -25,7 +25,6 @@ export interface StoreSection {
   y?: number;  // Grid position Y (optional for flexibility)
   position?: Position;  // Alternative position format
   products?: Product[];
-  congestionLevel?: number; // 1-5 scale (real-time traffic)
   description?: string;
   shelfNumber?: number; // Shelf number label (1-10 for product sections, 0 or undefined for counters)
 }
@@ -41,7 +40,7 @@ export interface Aisle {
   name: string;
   position: Position;
   products: Product[];
-  congestionLevel: number; // 1-10 scale
+  // congestionLevel removed with traffic feature
 }
 
 export interface Position {
@@ -53,7 +52,7 @@ export interface NavigationPath {
   path: Position[];
   totalDistance: number;
   estimatedTime: number;
-  congestionLevel: number;
+  // congestionLevel removed with traffic feature
 }
 
 export interface ExpiryAlert {
@@ -83,15 +82,7 @@ export interface User {
   preferences: string[];
 }
 
-export interface TrafficData {
-  sectionId: string;  // Section identifier
-  sectionName: string;
-  position?: Position;  // Optional position
-  currentPeople: number;
-  maxCapacity: number;
-  congestionLevel: number; // Calculated: currentPeople / maxCapacity
-  lastUpdated: Date;  // Changed from timestamp to lastUpdated for clarity
-}
+// TrafficData removed with traffic feature
 
 export interface RemovalLog {
   id?: string;
