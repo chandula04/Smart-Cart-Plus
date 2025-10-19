@@ -283,7 +283,7 @@ export default function StaffDashboard() {
   <div className="bg-white rounded-lg shadow-md p-5 sm:p-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Staff Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Staff Dashboard</h1>
             <p className="text-gray-600">
               Manage products, sections, and monitor expiry alerts
             </p>
@@ -302,7 +302,7 @@ export default function StaffDashboard() {
 
       {/* Tab Navigation */}
       <div className="bg-white rounded-lg shadow-md p-2">
-        <div className="flex space-x-2">
+        <div className="grid grid-cols-2 gap-2 md:flex md:space-x-2">
           <button
             onClick={() => setActiveTab('expiry')}
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -430,7 +430,7 @@ export default function StaffDashboard() {
                 .filter(a => a.daysUntilExpiry <= 5)
                 .slice(0, 10)
                 .map((alert, index) => (
-                <div key={alert.product.id} className="flex items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div key={alert.product.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">
                       <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-red-600 text-white text-sm font-bold">
@@ -447,8 +447,8 @@ export default function StaffDashboard() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-3">
-                    <div className="text-right">
+                  <div className="flex w-full sm:w-auto items-start sm:items-center justify-between sm:justify-end gap-3">
+                    <div className="text-right flex-1 sm:flex-initial">
                       <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium border ${getPriorityColor(alert.priority)}`}>
                         {getPriorityText(alert.priority)}
                       </div>
@@ -459,7 +459,7 @@ export default function StaffDashboard() {
                     
                     <button
                       onClick={() => handleMarkAsHandled(alert.product)}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                      className="w-full sm:w-auto bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700"
                     >
                       Mark Handled
                     </button>
@@ -629,7 +629,7 @@ export default function StaffDashboard() {
             </div>
             <button
               onClick={handleAddProduct}
-              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"
+              className="mt-4 w-full sm:w-auto bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"
             >
               Add Product
             </button>
@@ -790,7 +790,7 @@ export default function StaffDashboard() {
             </div>
             <button
               onClick={handleAddSection}
-              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"
+              className="mt-4 w-full sm:w-auto bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium"
             >
               Add Section to Store
             </button>
