@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { loadSections } from '@/lib/sectionsStore';
 import { RushHourNavigator } from '@/algorithms/rushHourNavigator';
 import { Position, NavigationPath } from '@/types';
 
@@ -18,8 +19,8 @@ interface StoreSection {
 export default function NavigationPage() {
   const [navigator] = useState(() => new RushHourNavigator());
   
-  // Define actual store sections with shelf numbers
-  const storeSections: StoreSection[] = [
+  // Default store sections with shelf numbers (used as baseline)
+  const defaultSections: StoreSection[] = [
     { 
       name: 'Cashier Counter', 
       position: { x: 0, y: 0 }, 
@@ -132,13 +133,45 @@ export default function NavigationPage() {
     },
   ];
 
-  const [selectedStart, setSelectedStart] = useState<StoreSection>(storeSections[0]); // Entrance
+  // Merge with persisted sections from Staff Dashboard (by name)
+  const persisted = loadSections();
+  const persistedByName = new Map(persisted.map(s => [s.name, s]));
+  const storeSections: StoreSection[] = [
+    // Map defaults, override with persisted position/icon/shelf when available
+    ...defaultSections.map(sec => {
+      const p = persistedByName.get(sec.name);
+      if (!p) return sec;
+      return {
+        ...sec,
+        position: { x: p.x ?? sec.position.x, y: p.y ?? sec.position.y },
+        icon: p.icon ?? sec.icon,
+        shelfNumber: typeof p.shelfNumber === 'number' ? p.shelfNumber : sec.shelfNumber,
+      } as StoreSection;
+    }),
+    // Add any extra sections that exist in persistence but not in defaults
+    ...persisted
+      .filter(p => !defaultSections.some(d => d.name === p.name))
+      .map(p => ({
+        name: p.name,
+        position: { x: p.x ?? 0, y: p.y ?? 0 },
+        icon: p.icon ?? '📦',
+        products: [],
+        color: 'bg-gray-50',
+        description: 'Custom section',
+        shelfNumber: p.shelfNumber ?? 0,
+      }) as StoreSection)
+  ];
+
+  // Always start from Cashier Counter (index 0)
+  const cashierSection = storeSections[0];
+  const [selectedStart] = useState<StoreSection>(cashierSection);
   const [selectedDestination, setSelectedDestination] = useState<StoreSection>(storeSections[11]); // Checkout
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [navigationPath, setNavigationPath] = useState<NavigationPath | null>(null);
   
   const handleFindPath = () => {
-    const path = navigator.findOptimalPath(selectedStart.position, selectedDestination.position);
+    // Always compute from cashier
+    const path = navigator.findOptimalPath(cashierSection.position, selectedDestination.position);
     setNavigationPath(path);
   };
 
@@ -152,14 +185,14 @@ export default function NavigationPage() {
     
     if (section) {
       setSelectedDestination(section);
-      const path = navigator.findOptimalPath(selectedStart.position, section.position);
+      const path = navigator.findOptimalPath(cashierSection.position, section.position);
       setNavigationPath(path);
     }
   };
 
   const handleSectionSelect = (section: StoreSection) => {
     setSelectedDestination(section);
-    const path = navigator.findOptimalPath(selectedStart.position, section.position);
+    const path = navigator.findOptimalPath(cashierSection.position, section.position);
     setNavigationPath(path);
   };
 
@@ -253,41 +286,19 @@ export default function NavigationPage() {
         )}
       </div>
 
-      {/* Current Location & Destination */}
+      {/* Destination Selection (Start is always Cashier) */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Your Journey</h2>
-        
+        <h2 className="text-xl font-semibold mb-2">Your Journey</h2>
+        <p className="text-sm text-gray-600 mb-4">Start: Cashier Counter (fixed)</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Current Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              📍 You are at:
-            </label>
-            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-              {storeSections.map((section) => (
-                <button
-                  key={section.name}
-                  onClick={() => setSelectedStart(section)}
-                  className={`p-3 rounded-lg border-2 transition-all ${
-                    isStartSection(section)
-                      ? 'border-green-500 bg-green-50 shadow-md'
-                      : 'border-gray-300 hover:border-green-300 bg-white'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{section.icon}</div>
-                  <div className="text-xs font-medium text-gray-800">{section.name}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Destination */}
-          <div>
+          <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-3">
               🎯 I want to go to:
             </label>
             <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-              {storeSections.filter(s => s.name !== 'Entrance').map((section) => (
+              {storeSections
+                .filter(s => s.name !== 'Cashier Counter' && s.name !== 'Checkout Counter')
+                .map((section) => (
                 <button
                   key={section.name}
                   onClick={() => handleSectionSelect(section)}
@@ -298,7 +309,9 @@ export default function NavigationPage() {
                   }`}
                 >
                   <div className="text-2xl mb-1">{section.icon}</div>
-                  <div className="text-xs font-medium text-gray-800">{section.name}</div>
+                  <div className="text-xs font-medium text-gray-800">
+                    {section.name}{section.shelfNumber > 0 ? ` (Shelf #${section.shelfNumber})` : ''}
+                  </div>
                 </button>
               ))}
             </div>
@@ -330,7 +343,7 @@ export default function NavigationPage() {
         <div className="flex flex-wrap gap-4 mb-6 text-sm bg-gray-50 p-4 rounded-lg">
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-green-300 border-2 border-green-600 rounded"></div>
-            <span className="font-medium">Your Location</span>
+            <span className="font-medium">Cashier (Start)</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-red-300 border-2 border-red-600 rounded"></div>

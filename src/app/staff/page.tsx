@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { SmartExpiryAlert } from '@/algorithms/smartExpiryAlert';
 import { Product, ExpiryAlert, StoreSection, TrafficData } from '@/types';
+import { loadSections, saveSections } from '@/lib/sectionsStore';
 
 export default function StaffDashboard() {
   const [expiryAlerts, setExpiryAlerts] = useState<ExpiryAlert[]>([]);
@@ -24,24 +25,12 @@ export default function StaffDashboard() {
   });
   
   // Category/Section Management State
-  const [sections, setSections] = useState<StoreSection[]>([
-    { id: 'entrance', name: 'Entrance', x: 0, y: 0, icon: '🚪' },
-    { id: 'dairy', name: 'Dairy & Eggs', x: 1, y: 0, icon: '🥛' },
-    { id: 'bakery', name: 'Bakery', x: 2, y: 0, icon: '🍞' },
-    { id: 'fruits', name: 'Fresh Fruits', x: 3, y: 0, icon: '🍎' },
-    { id: 'vegetables', name: 'Vegetables', x: 0, y: 1, icon: '🥬' },
-    { id: 'service', name: 'Customer Service', x: 1, y: 1, icon: 'ℹ️' },
-    { id: 'beverages', name: 'Beverages', x: 2, y: 1, icon: '🥤' },
-    { id: 'meat', name: 'Meat & Seafood', x: 3, y: 1, icon: '🍖' },
-    { id: 'frozen', name: 'Frozen Foods', x: 0, y: 2, icon: '🧊' },
-    { id: 'snacks', name: 'Snacks & Sweets', x: 1, y: 2, icon: '🍪' },
-    { id: 'household', name: 'Household Items', x: 2, y: 2, icon: '🧹' },
-    { id: 'checkout', name: 'Checkout Counter', x: 3, y: 2, icon: '💳' }
-  ]);
+  const [sections, setSections] = useState<StoreSection[]>(() => loadSections());
   const [newSection, setNewSection] = useState({
     name: '',
     position: 'top-left', // Changed from x, y to position selector
-    icon: ''
+    icon: '',
+    shelfNumber: '' as string | number
   });
   
   // Traffic Tracking State
@@ -51,7 +40,7 @@ export default function StaffDashboard() {
     // Initialize with sample traffic data
     const sampleTraffic: TrafficData[] = sections.map(section => ({
       sectionId: section.id,
-      sectionName: section.name,
+      sectionName: `${section.name}${section.shelfNumber && section.shelfNumber > 0 ? ` (Shelf #${section.shelfNumber})` : ''}`,
       currentPeople: Math.floor(Math.random() * 20),
       maxCapacity: 25,
       congestionLevel: 0,
@@ -202,10 +191,13 @@ export default function StaffDashboard() {
       name: newSection.name,
       x: coordinates.x,
       y: coordinates.y,
-      icon: newSection.icon || '📦'
+      icon: newSection.icon || '📦',
+      shelfNumber: newSection.shelfNumber ? Number(newSection.shelfNumber) : 0
     };
 
-    setSections([...sections, section]);
+  const updated = [...sections, section];
+  setSections(updated);
+  saveSections(updated);
     
     // Add traffic data for new section
     const newTraffic: TrafficData = {
@@ -222,7 +214,8 @@ export default function StaffDashboard() {
     setNewSection({
       name: '',
       position: 'top-left',
-      icon: ''
+      icon: '',
+      shelfNumber: ''
     });
 
     alert('Section added successfully!');
@@ -252,7 +245,14 @@ export default function StaffDashboard() {
 
   const handleRefresh = () => {
     setRefreshCount(prev => prev + 1);
+    const loaded = loadSections();
+    setSections(loaded);
   };
+
+  // Persist sections on any change
+  useEffect(() => {
+    saveSections(sections);
+  }, [sections]);
 
   const formatPrice = (price: number) => `Rs. ${price.toFixed(2)}`;
   
@@ -613,7 +613,7 @@ export default function StaffDashboard() {
                   <option value="">Select Section</option>
                   {sections.map(section => (
                     <option key={section.id} value={section.name}>
-                      {section.icon} {section.name}
+                      {section.icon} {section.name}{section.shelfNumber && section.shelfNumber > 0 ? ` (Shelf #${section.shelfNumber})` : ''}
                     </option>
                   ))}
                 </select>
@@ -787,6 +787,19 @@ export default function StaffDashboard() {
                 />
                 <p className="text-xs text-gray-500 mt-1">Type or paste an emoji from your keyboard (Windows: Win + . or Mac: Cmd + Ctrl + Space)</p>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Shelf Number</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={newSection.shelfNumber}
+                  onChange={(e) => setNewSection({...newSection, shelfNumber: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0 for counters, 1-10 for shelves"
+                />
+                <p className="text-xs text-gray-500 mt-1">Use 1-10 for product shelves, or 0 for counters like Entrance/Cashier.</p>
+              </div>
             </div>
             <button
               onClick={handleAddSection}
@@ -807,6 +820,11 @@ export default function StaffDashboard() {
                   <div className="text-xs text-gray-500 mt-1">
                     Row {(section.y || 0) + 1}, Col {(section.x || 0) + 1}
                   </div>
+                  {typeof section.shelfNumber !== 'undefined' && section.shelfNumber > 0 && (
+                    <div className="mt-2 inline-block text-xs font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded">
+                      Shelf #{section.shelfNumber}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

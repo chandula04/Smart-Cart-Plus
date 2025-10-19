@@ -26,6 +26,7 @@ export interface StoreSection {
   products?: Product[];
   congestionLevel?: number; // 1-5 scale (real-time traffic)
   description?: string;
+  shelfNumber?: number; // Shelf number label (1-10 for product sections, 0 or undefined for counters)
 }
 
 export interface StoreLayout {

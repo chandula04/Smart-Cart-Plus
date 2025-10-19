@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 
 // Algorithm imports
 import { BinarySearch } from '@/algorithms/binarySearch';
-import { MergeSort } from '@/algorithms/mergeSort';
 import { RushHourNavigator } from '@/algorithms/rushHourNavigator';
 import { SmartExpiryAlert } from '@/algorithms/smartExpiryAlert';
 import { ProductRecommendationSystem } from '@/algorithms/productRecommendation';
@@ -16,8 +15,7 @@ export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [sortedProducts, setSortedProducts] = useState<Product[]>([]);
-  const [sortType, setSortType] = useState<'name' | 'price' | 'expiry'>('name');
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [currentPosition] = useState<Position>({ x: 0, y: 0 });
   const [navigationPath, setNavigationPath] = useState<NavigationPath | null>(null);
@@ -90,7 +88,7 @@ export default function HomePage() {
     ];
     
     setProducts(sampleProducts);
-    setSortedProducts(sampleProducts);
+  // Catalog removed from Home: we no longer maintain a sorted list
     
     // Initialize expiry alerts
     sampleProducts.forEach(product => {
@@ -98,41 +96,42 @@ export default function HomePage() {
       recommendationSystem.addProduct(product);
     });
     
-    updateExpiryAlerts();
-    updateRecommendations();
+    // Initialize alerts and recommendations inline to avoid stale deps
+    const initialAlerts = expirySystem.getTopExpiringProducts(5);
+    setExpiryAlerts(initialAlerts);
+    const trending = recommendationSystem.getTrendingProducts(5);
+    setRecommendations(trending);
   }, [expirySystem, recommendationSystem]);
   
   // Search functionality using Binary Search
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    if (term.trim() === '') {
+    const t = term.trim().toLowerCase();
+    if (t === '') {
       setSearchResults([]);
+      setSuggestions([]);
       return;
     }
-    
+
+    // Live suggestions (substring match, top 8)
+    const sug = products
+      .filter(p => p.name.toLowerCase().includes(t))
+      .slice(0, 8);
+    setSuggestions(sug);
+
+    // Full search results using Binary Search
     const results = BinarySearch.searchByName(products, term);
     setSearchResults(results);
   };
-  
-  // Sorting functionality using Merge Sort
-  const handleSort = (type: 'name' | 'price' | 'expiry') => {
-    setSortType(type);
-    let sorted: Product[] = [];
-    
-    switch (type) {
-      case 'name':
-        sorted = MergeSort.sortByName(products, true);
-        break;
-      case 'price':
-        sorted = MergeSort.sortByPrice(products, true);
-        break;
-      case 'expiry':
-        sorted = MergeSort.sortByExpiryDate(products, true);
-        break;
-    }
-    
-    setSortedProducts(sorted);
+
+  const handleSuggestionClick = (product: Product) => {
+    setSearchTerm(product.name);
+    const results = BinarySearch.searchByName(products, product.name);
+    setSearchResults(results);
+    setSuggestions([]);
   };
+  
+  // Catalog sorting removed from Home
   
   // Add to cart functionality
   const addToCart = (product: Product) => {
@@ -162,6 +161,12 @@ export default function HomePage() {
   const updateExpiryAlerts = () => {
     const alerts = expirySystem.getTopExpiringProducts(5);
     setExpiryAlerts(alerts);
+  };
+
+  // Mark an expiry alert as handled
+  const handleMarkAsHandled = (productId: string) => {
+    expirySystem.removeProduct(productId);
+    updateExpiryAlerts();
   };
   
   // Update recommendations
@@ -223,6 +228,20 @@ export default function HomePage() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
+        {suggestions.length > 0 && (
+          <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {suggestions.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => handleSuggestionClick(p)}
+                className="text-left px-3 py-2 bg-blue-50 text-blue-700 rounded border border-blue-200 hover:bg-blue-100 text-sm"
+                title={p.name}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        )}
         
         {searchResults.length > 0 && (
           <div className="space-y-2">
@@ -251,60 +270,7 @@ export default function HomePage() {
         )}
       </div>
       
-      {/* Sorting Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">Product Catalog</h2>
-        <div className="mb-4 flex gap-2">
-          <button
-            onClick={() => handleSort('name')}
-            className={`px-4 py-2 rounded-lg ${sortType === 'name' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            Sort by Name
-          </button>
-          <button
-            onClick={() => handleSort('price')}
-            className={`px-4 py-2 rounded-lg ${sortType === 'price' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            Sort by Price
-          </button>
-          <button
-            onClick={() => handleSort('expiry')}
-            className={`px-4 py-2 rounded-lg ${sortType === 'expiry' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            Sort by Expiry
-          </button>
-        </div>
-        
-        <div className="grid gap-4">
-          {sortedProducts.map(product => (
-            <div key={product.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-              <div>
-                <h4 className="font-medium">{product.name}</h4>
-                <p className="text-sm text-gray-600">{product.category} - {product.section}</p>
-                <p className="text-sm text-gray-600">Stock: {product.quantity}</p>
-                <p className="text-sm text-gray-600">Expires: {product.expiryDate ? formatDate(product.expiryDate) : 'N/A'}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-lg">{formatPrice(product.price)}</p>
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={() => addToCart(product)}
-                    className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                  >
-                    Add to Cart
-                  </button>
-                  <button
-                    onClick={() => navigateToProduct(product)}
-                    className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
-                  >
-                    Navigate
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Product Catalog removed from Home page as requested */}
       
       {/* Navigation Path */}
       {navigationPath && (
@@ -380,14 +346,24 @@ export default function HomePage() {
                     {alert.daysUntilExpiry <= 0 ? 'EXPIRED' : `${alert.daysUntilExpiry} days left`}
                   </span>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  alert.priority === 1 ? 'bg-red-200 text-red-800' :
-                  alert.priority === 2 ? 'bg-orange-200 text-orange-800' :
-                  'bg-yellow-200 text-yellow-800'
-                }`}>
-                  {alert.priority === 1 ? 'CRITICAL' : 
-                   alert.priority === 2 ? 'HIGH' : 'MEDIUM'}
-                </span>
+                <div className="text-right">
+                  <div className={`inline-block text-xs px-2 py-1 rounded ${
+                    alert.priority === 1 ? 'bg-red-200 text-red-800' :
+                    alert.priority === 2 ? 'bg-orange-200 text-orange-800' :
+                    'bg-yellow-200 text-yellow-800'
+                  }`}>
+                    {alert.priority === 1 ? 'CRITICAL' : 
+                     alert.priority === 2 ? 'HIGH' : 'MEDIUM'}
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => handleMarkAsHandled(alert.product.id)}
+                      className="mt-2 px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                    >
+                      Mark Handled
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -410,12 +386,6 @@ export default function HomePage() {
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">{formatPrice(rec.product.price)}</p>
-                  <button
-                    onClick={() => addToCart(rec.product)}
-                    className="mt-2 px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                  >
-                    Add to Cart
-                  </button>
                 </div>
               </div>
             </div>
