@@ -70,6 +70,7 @@ export default function HomePage() {
         .filter(a => a.daysUntilExpiry <= 5)
         .map(a => ({
           ...a,
+          // 1=Critical (≤2), 2=High (3–5)
           priority: a.daysUntilExpiry <= 2 ? 1 : 2,
         }));
       setExpiryAlerts(alerts);

@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { checkoutCartTxn } from '@/lib/db';
 import Link from 'next/link';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, clearCart, getCartTotal, getCartCount } = useCart();
+  const { uid } = useAuth();
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mobile'>('card');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -16,16 +19,20 @@ export default function CartPage() {
     setShowPayment(true);
   };
 
-  const handlePayment = () => {
-    // Simulate payment processing
-    setTimeout(() => {
+  const handlePayment = async () => {
+    // Simulate payment processing delay
+    await new Promise(res => setTimeout(res, 1200));
+    try {
+      if (!uid) throw new Error('Not signed in');
+      await checkoutCartTxn(uid, cart);
       setPaymentSuccess(true);
-      setTimeout(() => {
-        clearCart();
-        setPaymentSuccess(false);
-        setShowPayment(false);
-      }, 2000);
-    }, 1500);
+      // Cart items removed by txn; reflect immediately in UI
+      await new Promise(res => setTimeout(res, 1600));
+      setPaymentSuccess(false);
+      setShowPayment(false);
+    } catch (err: any) {
+      alert(err?.message || 'Payment failed. Please try again.');
+    }
   };
 
   if (paymentSuccess) {

@@ -300,64 +300,7 @@ export default function NavigationPage() {
         </div>
       </div>
 
-      {/* Store Map */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Store Layout</h2>
-        
-        {/* Legend */}
-        <div className="flex flex-wrap gap-4 mb-6 text-sm bg-gray-50 p-4 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-green-300 border-2 border-green-600 rounded"></div>
-            <span className="font-medium">Cashier (Start)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-red-300 border-2 border-red-600 rounded"></div>
-            <span className="font-medium">Destination</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-blue-300 border-2 border-blue-600 rounded"></div>
-            <span className="font-medium">Follow This Path</span>
-          </div>
-        </div>
-
-        {/* Grid Map */}
-        <div className="overflow-x-auto">
-          <div className="inline-block min-w-full">
-            {[0, 1, 2].map((y) => (
-              <div key={y} className="flex">
-                {[0, 1, 2, 3].map((x) => {
-                  const section = getSectionAt(x, y);
-                  if (!section) return null;
-                  
-                  return (
-                    <div
-                      key={`${x}-${y}`}
-                      className={`w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 border-2 ${getCellStyle(section)} transition-all cursor-pointer flex flex-col items-center justify-center text-center p-2 sm:p-3 m-1 rounded-lg`}
-                      onClick={() => handleSectionSelect(section)}
-                    >
-                      <div className="text-2xl sm:text-3xl mb-1">{section.icon}</div>
-                      <div className="text-[10px] sm:text-xs font-bold text-gray-800 leading-tight">
-                        {section.name}
-                      </div>
-                      {section.shelfNumber > 0 && (
-                        <div className="mt-1 text-[10px] sm:text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded">
-                          Shelf #{section.shelfNumber}
-                        </div>
-                      )}
-                      {isStartSection(section) && (
-                        <div className="mt-1 text-xs font-bold text-green-700">STAFF HERE</div>
-                      )}
-                      {isDestinationSection(section) && (
-                        <div className="mt-1 text-xs font-bold text-red-700">TARGET</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Store Map removed as requested */}
 
       {/* Route Information */}
       {navigationPath && (

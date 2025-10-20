@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BinarySearch } from '@/algorithms/binarySearch';
 import { MergeSort } from '@/algorithms/mergeSort';
+import { daysUntil, formatDate as fmtDate } from '@/lib/utils';
 import { Product } from '@/types';
 import { observeProducts } from '@/lib/db';
 import { useCart } from '@/contexts/CartContext';
@@ -57,7 +58,10 @@ export default function ProductsPage() {
     }
 
     // Apply price range filter
-    filtered = BinarySearch.searchByPriceRange(filtered, priceRange.min, priceRange.max);
+      // Filter by price range and in-stock only
+      filtered = filtered
+        .filter(p => p.price >= priceRange.min && p.price <= priceRange.max)
+        .filter(p => (p.quantity ?? 0) > 0 && p.inStock !== false);
 
     // Apply sorting
     switch (sortBy) {
@@ -78,19 +82,15 @@ export default function ProductsPage() {
   const categories = ['all', ...Array.from(new Set(products.map(p => p.category)))];
 
   const formatPrice = (price: number) => `Rs. ${price.toFixed(2)}`;
-  const formatDate = (date: Date) => date.toLocaleDateString();
+  const formatDate = (date: Date) => fmtDate(date);
 
-  const getDaysUntilExpiry = (expiryDate: Date) => {
-    const now = new Date();
-    const timeDiff = expiryDate.getTime() - now.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24));
-  };
+  const getDaysUntilExpiry = (expiryDate: Date) => daysUntil(expiryDate);
 
   const getExpiryStatus = (days: number) => {
     if (days < 0) return { text: 'Expired', color: 'text-red-600 bg-red-100' };
-    if (days <= 1) return { text: 'Expires Today', color: 'text-red-600 bg-red-100' };
-    if (days <= 3) return { text: `${days} days left`, color: 'text-orange-600 bg-orange-100' };
-    if (days <= 7) return { text: `${days} days left`, color: 'text-yellow-600 bg-yellow-100' };
+    if (days === 0) return { text: 'Expires Today', color: 'text-red-600 bg-red-100' };
+    if (days <= 2) return { text: 'Critical', color: 'text-red-700 bg-red-100' };
+    if (days <= 5) return { text: 'High Priority', color: 'text-orange-700 bg-orange-100' };
     return { text: `${days} days left`, color: 'text-green-600 bg-green-100' };
   };
 
@@ -235,6 +235,7 @@ export default function ProductsPage() {
                 {/* Actions */}
                 <div className="flex">
                   <button 
+                    disabled={(product.quantity ?? 0) <= 0 || product.inStock === false}
                     onClick={() => {
                       if (!product.id) {
                         alert('Error: Product has no ID');
@@ -243,9 +244,9 @@ export default function ProductsPage() {
                       addToCart(product);
                       alert(`${product.name} added to cart!`);
                     }}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    className={`w-full py-2 px-4 rounded-lg transition-colors ${((product.quantity ?? 0) <= 0 || product.inStock === false) ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                   >
-                    🛒 Add to Cart
+                    {((product.quantity ?? 0) <= 0 || product.inStock === false) ? 'Out of Stock' : '🛒 Add to Cart'}
                   </button>
                 </div>
               </div>

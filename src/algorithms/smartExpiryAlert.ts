@@ -1,4 +1,5 @@
 import { Product, ExpiryAlert } from '@/types';
+import { daysUntil } from '@/lib/utils';
 
 interface HeapNode {
   product: Product;
@@ -246,13 +247,7 @@ export class SmartExpiryAlert {
    * @returns Number of days until expiry
    */
   private calculateDaysUntilExpiry(expiryDate: Date): number {
-    const now = new Date();
-    const timeDiff = expiryDate.getTime() - now.getTime();
-    const dayMs = 1000 * 3600 * 24;
-    const diffDays = timeDiff / dayMs;
-    // Use floor for positive durations so 5.x days shows as 5 (included)
-    // Use ceil for negatives to keep -0.x as 0 or negative appropriately handled by priority
-    return diffDays >= 0 ? Math.floor(diffDays) : Math.ceil(diffDays);
+  return daysUntil(expiryDate);
   }
   
   /**

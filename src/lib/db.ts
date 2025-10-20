@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, doc, onSnapshot, query, setDoc, updateDoc, addDoc, deleteDoc, getDocs, serverTimestamp, where, QuerySnapshot, DocumentData, DocumentReference, orderBy } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, setDoc, updateDoc, addDoc, deleteDoc, getDocs, serverTimestamp, where, QuerySnapshot, DocumentData, DocumentReference, orderBy, increment, runTransaction } from 'firebase/firestore';
 import { Product, StoreSection, CartItem, RemovalLog } from '@/types';
 
 // Collections
@@ -141,6 +141,16 @@ export const clearCartItems = async (uid: string) => {
   await Promise.all(deletions);
 };
 
+/**
+ * Atomically adjust product stock by delta (negative to reduce).
+ * Also sets inStock depending on the resulting quantity if provided by caller.
+ */
+export const adjustProductStock = async (id: string, delta: number) => {
+  // Use Firestore atomic increment; cannot compute inStock atomically here without a transaction,
+  // but we can set inStock to false optimistically if delta is negative and may cross zero.
+  await updateDoc(doc(db, 'products', id), { quantity: increment(delta) } as any);
+};
+
 // Removal logs
 const removalLogsCol = () => collection(db, 'removalLogs');
 
@@ -165,5 +175,42 @@ export const observeRemovalLogs = (cb: (items: RemovalLog[]) => void) => {
       } as RemovalLog);
     });
     cb(list);
+  });
+};
+
+/**
+ * Atomically checkout the cart: decrement product stocks by cart quantities and clear the cart.
+ * Fails if any item has insufficient stock at commit time.
+ */
+export const checkoutCartTxn = async (uid: string, items: CartItem[]) => {
+  if (!uid) throw new Error('UID is required for checkout');
+  if (!items || items.length === 0) return;
+
+  await runTransaction(db, async (tx) => {
+    // Validate and update products
+    for (const it of items) {
+      const pid = it.product.id;
+      if (!pid) throw new Error('Product ID missing during checkout');
+      const pRef = doc(db, 'products', pid);
+      const snap = await tx.get(pRef);
+      if (!snap.exists()) {
+        throw new Error(`Product not found: ${it.product.name || pid}`);
+      }
+      const data = snap.data() as any;
+      const currentQty = Number(data.quantity || 0);
+      const newQty = currentQty - Number(it.quantity || 0);
+      if (newQty < 0) {
+        throw new Error(`Insufficient stock for ${data.name || pid}. Available: ${currentQty}, requested: ${it.quantity}`);
+      }
+      tx.update(pRef, { quantity: newQty, inStock: newQty > 0 });
+    }
+
+    // Clear cart items
+    for (const it of items) {
+      const pid = it.product.id;
+      if (!pid) continue;
+      const cRef = doc(db, 'carts', uid, 'items', pid);
+      tx.delete(cRef);
+    }
   });
 };

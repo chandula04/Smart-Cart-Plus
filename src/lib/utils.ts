@@ -19,6 +19,18 @@ export function formatDate(date: Date): string {
   }).format(date)
 }
 
+/**
+ * Returns the number of calendar days from today to the given date.
+ * Positive values mean in the future, negative in the past. Time-of-day is ignored.
+ */
+export function daysUntil(date: Date): number {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayMs = 24 * 60 * 60 * 1000;
+  return Math.round((end.getTime() - start.getTime()) / dayMs);
+}
+
 export function calculateDistance(pos1: { x: number; y: number }, pos2: { x: number; y: number }): number {
   const dx = pos2.x - pos1.x;
   const dy = pos2.y - pos1.y;

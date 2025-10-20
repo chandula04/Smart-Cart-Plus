@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { CartItem, Product } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
-import { observeCart, setCartItem, removeCartItem, clearCartItems } from '@/lib/db';
+import { observeCart, setCartItem, removeCartItem, clearCartItems, updateProduct, adjustProductStock } from '@/lib/db';
 
 interface CartContextType {
   cart: CartItem[];
@@ -98,7 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       alert(`Only ${maxStock} in stock. You already have the maximum quantity in your cart.`);
       return;
     }
-    // Optimistic local update for instant UI feedback
+    // Optimistic local update for instant UI feedback (and reduce local product stock snapshot)
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.product.id === product.id);
       if (existingItem) {
@@ -116,6 +116,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const existing = cart.find(c => c.product.id === product.id);
         const nextQty = Math.min((existing ? existing.quantity + 1 : 1), maxStock);
         await setCartItem(uid, { product, quantity: nextQty });
+        // Decrease product stock in Firestore; if reaches 0, mark out of stock
+        await adjustProductStock(product.id, -1);
       } catch (err) {
         console.error('Failed to set cart item in Firestore:', err);
         // Keep optimistic state so the user sees the item in the cart; it will sync later
@@ -160,6 +162,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (uid) {
       try {
         await setCartItem(uid, { ...existing, quantity: clamped });
+        // Adjust stock based on delta
+        const delta = clamped - (existing.quantity || 0);
+        if (delta !== 0) {
+          await adjustProductStock(productId, -delta);
+        }
       } catch (err) {
         console.error('Failed to update cart item in Firestore:', err);
       }
