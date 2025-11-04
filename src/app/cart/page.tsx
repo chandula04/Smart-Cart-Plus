@@ -312,9 +312,13 @@ export default function CartPage() {
             >
               Clear Cart
             </button>
+
+            
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+
