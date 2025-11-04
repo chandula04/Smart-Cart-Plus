@@ -170,6 +170,10 @@ export default function HomePage() {
   const formatPrice = (price: number) => `Rs. ${price.toFixed(2)}`;
   const formatDate = (date: Date) => date.toLocaleDateString();
   
+  // Counts for alert categories
+  const criticalCount = expiryAlerts.filter(a => a.priority === 1).length;
+  const highCount = expiryAlerts.filter(a => a.priority === 2).length;
+  
   return (
     <div className="space-y-8">
       {/* Hero Section */}
@@ -311,7 +315,17 @@ export default function HomePage() {
       
       {/* Expiry Alerts */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-4">Expiry Alerts</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-semibold">Expiry Alerts</h2>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+              Critical: {criticalCount}
+            </span>
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
+              High: {highCount}
+            </span>
+          </div>
+        </div>
         <div className="space-y-2">
           {expiryAlerts.map((alert, index) => (
             <div key={alert.product.id} className={`p-3 rounded-lg border ${
