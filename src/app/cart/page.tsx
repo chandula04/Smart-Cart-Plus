@@ -19,6 +19,8 @@ export default function CartPage() {
     setShowPayment(true);
   };
 
+
+  
   const handlePayment = async () => {
     // Simulate payment processing delay
     await new Promise(res => setTimeout(res, 1200));
